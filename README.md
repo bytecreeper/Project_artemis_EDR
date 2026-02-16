@@ -123,7 +123,7 @@ for r in results:
 | Sigma | Available | Generic format, converts to 20+ SIEMs |
 | YARA | Available | Pattern matching for files/malware |
 | Splunk SPL | Available | Native Splunk queries |
-| KQL | Coming | Microsoft Sentinel/Defender |
+| KQL | Available | Microsoft Sentinel/Defender queries |
 | Snort/Suricata | Coming | Network IDS rules |
 
 ## Local LLM Setup (Ollama)
@@ -227,10 +227,11 @@ project-artemis/
 - [x] Sigma rule generation
 - [x] YARA rule generation
 - [x] Splunk SPL generation
+- [x] KQL (Microsoft Sentinel/Defender) generation
 - [x] Rule validation
 - [x] MITRE ATT&CK auto-mapping
 - [x] Local LLM support (Ollama)
-- [ ] KQL (Microsoft Sentinel/Defender) generation
+- [ ] Snort/Suricata IDS rules
 - [ ] Rule testing against sample data
 - [ ] Rule conversion between formats
 - [ ] Web UI

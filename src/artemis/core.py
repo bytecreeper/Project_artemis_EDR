@@ -10,7 +10,7 @@ from artemis.models import (
     RuleFormat,
 )
 from artemis.llm import LLMProvider, get_provider
-from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
+from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator, KqlGenerator
 from artemis.generators.base import BaseGenerator
 
 
@@ -57,6 +57,7 @@ class Artemis:
             RuleFormat.SIGMA: SigmaGenerator(self.llm),
             RuleFormat.YARA: YaraGenerator(self.llm),
             RuleFormat.SPLUNK: SplunkGenerator(self.llm),
+            RuleFormat.KQL: KqlGenerator(self.llm),
             # TODO: Add more generators
             # RuleFormat.KQL: KqlGenerator(self.llm),
         }

@@ -4,5 +4,6 @@ from artemis.generators.base import BaseGenerator
 from artemis.generators.sigma import SigmaGenerator
 from artemis.generators.yara import YaraGenerator
 from artemis.generators.splunk import SplunkGenerator
+from artemis.generators.kql import KqlGenerator
 
-__all__ = ["BaseGenerator", "SigmaGenerator", "YaraGenerator", "SplunkGenerator"]
+__all__ = ["BaseGenerator", "SigmaGenerator", "YaraGenerator", "SplunkGenerator", "KqlGenerator"]
