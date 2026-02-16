@@ -10,7 +10,7 @@ from sentinel.models import (
     RuleFormat,
 )
 from sentinel.llm import LLMProvider, get_provider
-from sentinel.generators import SigmaGenerator
+from sentinel.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
 from sentinel.generators.base import BaseGenerator
 
 
@@ -55,9 +55,10 @@ class Sentinel:
         # Initialize generators
         self._generators: dict[RuleFormat, BaseGenerator] = {
             RuleFormat.SIGMA: SigmaGenerator(self.llm),
+            RuleFormat.YARA: YaraGenerator(self.llm),
+            RuleFormat.SPLUNK: SplunkGenerator(self.llm),
             # TODO: Add more generators
-            # RuleFormat.YARA: YaraGenerator(self.llm),
-            # RuleFormat.SPLUNK: SplunkGenerator(self.llm),
+            # RuleFormat.KQL: KqlGenerator(self.llm),
         }
     
     def get_generator(self, format: RuleFormat) -> BaseGenerator:
