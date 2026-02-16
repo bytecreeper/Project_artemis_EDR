@@ -5,7 +5,7 @@ Generate detection rules from natural language threat descriptions.
 Supports Sigma, YARA, Splunk SPL, KQL, and Snort/Suricata formats.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.5.0"
 __author__ = "ByteCreeper"
 
 from artemis.core import Artemis

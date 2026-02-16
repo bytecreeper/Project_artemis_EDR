@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-artemis"
-version = "0.3.0"
+version = "0.5.0"
 description = "Project Artemis - AI-powered detection engineering platform"
 authors = [
     {name = "ByteCreeper", email = "bytecreeper@proton.me"}
