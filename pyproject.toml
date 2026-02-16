@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel"
+version = "0.1.0"
+description = "AI-powered detection engineering platform"
+authors = [
+    {name = "ByteCreeper", email = "bytecreeper@proton.me"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+keywords = ["security", "detection", "sigma", "yara", "siem", "threat-detection"]
+
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "httpx>=0.25",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+anthropic = ["anthropic>=0.18"]
+openai = ["openai>=1.0"]
+all = ["sentinel[anthropic,openai,dev]"]
+
+[project.scripts]
+sentinel = "sentinel.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/whisperrr-ux/sentinel"
+Repository = "https://github.com/whisperrr-ux/sentinel"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
