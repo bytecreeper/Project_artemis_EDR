@@ -1,4 +1,4 @@
-"""Command-line interface for Sentinel."""
+"""Command-line interface for Project Artemis."""
 
 import asyncio
 import json
@@ -12,9 +12,9 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 
-from sentinel import __version__
-from sentinel.core import Sentinel
-from sentinel.models import RuleFormat, GenerationResult
+from artemis import __version__
+from artemis.core import Artemis
+from artemis.models import RuleFormat, GenerationResult
 
 
 console = Console()
@@ -104,9 +104,9 @@ def print_result(result: GenerationResult, output_format: str = "pretty"):
 
 
 @click.group()
-@click.version_option(version=__version__, prog_name="sentinel")
+@click.version_option(version=__version__, prog_name="artemis")
 def main():
-    """Sentinel - AI-powered detection engineering platform.
+    """Project Artemis - AI-powered detection engineering platform.
     
     Generate detection rules from natural language threat descriptions.
     """
@@ -146,11 +146,11 @@ def generate(
     
     Examples:
     
-        sentinel generate "Detect PowerShell downloading files"
+        artemis generate "Detect PowerShell downloading files"
         
-        sentinel generate "Mimikatz credential dumping" -s critical
+        artemis generate "Mimikatz credential dumping" -s critical
         
-        sentinel generate "Suspicious DNS queries" -c "Windows DNS logs" --save rule.yml
+        artemis generate "Suspicious DNS queries" -p ollama -m qwen3:32b
     """
     try:
         format_enum = RuleFormat(rule_format)
@@ -159,7 +159,7 @@ def generate(
         sys.exit(1)
     
     try:
-        sentinel = Sentinel(provider=provider, model=model)
+        engine = Artemis(provider=provider, model=model)
     except Exception as e:
         console.print(f"[red]Failed to initialize: {e}[/red]")
         sys.exit(1)
@@ -167,7 +167,7 @@ def generate(
     indicators = list(indicator) if indicator else None
     
     with console.status("[bold blue]Generating detection rule..."):
-        result = sentinel.generate_sync(
+        result = engine.generate_sync(
             description=description,
             format=format_enum,
             context=context,
@@ -208,7 +208,7 @@ def batch(input_file: str, rule_format: str, provider: str, output_dir: Optional
     console.print(f"[blue]Processing {len(descriptions)} threat descriptions...[/blue]")
     
     try:
-        sentinel = Sentinel(provider=provider)
+        engine = Artemis(provider=provider)
         format_enum = RuleFormat(rule_format)
     except Exception as e:
         console.print(f"[red]Failed to initialize: {e}[/red]")
@@ -219,7 +219,7 @@ def batch(input_file: str, rule_format: str, provider: str, output_dir: Optional
         out_path.mkdir(parents=True, exist_ok=True)
     
     async def run_batch():
-        results = await sentinel.generate_batch(descriptions, format=format_enum)
+        results = await engine.generate_batch(descriptions, format=format_enum)
         return results
     
     results = asyncio.run(run_batch())
@@ -265,8 +265,8 @@ def formats():
               help="Rule format")
 def validate(rule_file: str, rule_format: str):
     """Validate an existing detection rule."""
-    from sentinel.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
-    from sentinel.models import DetectionRule
+    from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
+    from artemis.models import DetectionRule
     
     content = Path(rule_file).read_text()
     

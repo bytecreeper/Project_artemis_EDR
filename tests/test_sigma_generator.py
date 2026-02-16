@@ -3,8 +3,8 @@
 import pytest
 import yaml
 
-from sentinel.models import ThreatDescription, RuleFormat, Severity
-from sentinel.generators.sigma import SigmaGenerator
+from artemis.models import ThreatDescription, RuleFormat, Severity
+from artemis.generators.sigma import SigmaGenerator
 
 
 class MockLLM:
@@ -139,7 +139,7 @@ class TestSigmaGenerator:
     
     def test_validate_missing_fields(self, generator):
         """Test validation catches missing required fields."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         # Rule missing logsource
         bad_rule = DetectionRule(
@@ -158,7 +158,7 @@ class TestSigmaGenerator:
     
     def test_validate_invalid_yaml(self, generator):
         """Test validation catches invalid YAML."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",
@@ -176,7 +176,7 @@ class TestSigmaGenerator:
     
     def test_validate_missing_condition(self, generator):
         """Test validation catches missing condition."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",

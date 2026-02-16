@@ -2,8 +2,8 @@
 
 import pytest
 
-from sentinel.models import ThreatDescription, RuleFormat, Severity
-from sentinel.generators.splunk import SplunkGenerator
+from artemis.models import ThreatDescription, RuleFormat, Severity
+from artemis.generators.splunk import SplunkGenerator
 
 
 class MockLLM:
@@ -139,7 +139,7 @@ class TestSplunkGenerator:
     
     def test_validate_empty_query(self, generator):
         """Test validation catches empty queries."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",
@@ -157,7 +157,7 @@ class TestSplunkGenerator:
     
     def test_validate_unbalanced_parens(self, generator):
         """Test validation catches unbalanced parentheses."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",
@@ -175,7 +175,7 @@ class TestSplunkGenerator:
     
     def test_validate_valid_query(self, generator):
         """Test validation passes for valid query."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         good_rule = DetectionRule(
             id="test",

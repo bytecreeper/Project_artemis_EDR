@@ -2,8 +2,8 @@
 
 import pytest
 
-from sentinel.models import ThreatDescription, RuleFormat, Severity
-from sentinel.generators.yara import YaraGenerator
+from artemis.models import ThreatDescription, RuleFormat, Severity
+from artemis.generators.yara import YaraGenerator
 
 
 class MockLLM:
@@ -139,7 +139,7 @@ class TestYaraGenerator:
     
     def test_validate_missing_condition(self, generator):
         """Test validation catches missing condition."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",
@@ -160,7 +160,7 @@ class TestYaraGenerator:
     
     def test_validate_mismatched_braces(self, generator):
         """Test validation catches mismatched braces."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         bad_rule = DetectionRule(
             id="test",
@@ -183,7 +183,7 @@ class TestYaraGenerator:
     
     def test_validate_valid_rule(self, generator):
         """Test validation passes for valid rule."""
-        from sentinel.models import DetectionRule
+        from artemis.models import DetectionRule
         
         good_rule = DetectionRule(
             id="test",

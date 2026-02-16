@@ -1,21 +1,22 @@
-# Sentinel
+# Project Artemis
 
 AI-powered detection engineering platform. Generate detection rules from natural language threat descriptions.
 
 ## Features
 
 - **Natural language to detection rules** - Describe a threat, get a deployable rule
-- **Multiple formats** - Sigma (now), YARA, Splunk SPL, KQL, Snort (coming)
+- **Multiple formats** - Sigma, YARA, Splunk SPL (available), KQL, Snort (coming)
 - **Automatic MITRE ATT&CK mapping** - Rules tagged with relevant techniques
 - **Rule validation** - Syntax and logic checks before deployment
 - **Swappable LLM backends** - Anthropic, OpenAI, or local Ollama
+- **Local inference** - Run entirely offline with Ollama + DeepSeek/Qwen models
 
 ## Installation
 
 ```bash
 # Clone the repo
-git clone https://github.com/whisperrr-ux/sentinel.git
-cd sentinel
+git clone https://github.com/whisperrr-ux/project-artemis.git
+cd project-artemis
 
 # Install with pip (editable mode for development)
 pip install -e ".[all]"
@@ -26,7 +27,7 @@ pip install -e .
 
 ## Quick Start
 
-Set your API key:
+Set your API key (or use Ollama for local inference):
 
 ```bash
 export ANTHROPIC_API_KEY="your-key-here"
@@ -37,25 +38,25 @@ export OPENAI_API_KEY="your-key-here"
 Generate a Sigma rule:
 
 ```bash
-sentinel generate "Detect PowerShell downloading files from the internet"
+artemis generate "Detect PowerShell downloading files from the internet"
 ```
 
-With more context:
+With local Ollama:
 
 ```bash
-sentinel generate "Mimikatz credential dumping via lsass" \
+artemis generate "Mimikatz credential dumping via lsass" \
+  -p ollama -m qwen3:32b \
   --severity critical \
-  --context "Windows endpoint with Sysmon" \
   --save mimikatz.yml
 ```
 
 ## CLI Usage
 
 ```
-sentinel generate <description>   Generate a detection rule
-sentinel batch <file>             Generate rules from file (one per line)
-sentinel validate <rule.yml>      Validate an existing rule
-sentinel formats                  List supported formats
+artemis generate <description>    Generate a detection rule
+artemis batch <file>              Generate rules from file (one per line)
+artemis validate <rule.yml>       Validate an existing rule
+artemis formats                   List supported formats
 ```
 
 ### Options
@@ -75,14 +76,17 @@ sentinel formats                  List supported formats
 
 ```python
 import asyncio
-from sentinel import Sentinel, RuleFormat
+from artemis import Artemis, RuleFormat
 
 async def main():
     # Initialize with Anthropic (default)
-    sentinel = Sentinel(provider="anthropic")
+    engine = Artemis(provider="anthropic")
+    
+    # Or use local Ollama
+    engine = Artemis(provider="ollama", model="qwen3:32b")
     
     # Generate a Sigma rule
-    result = await sentinel.generate(
+    result = await engine.generate(
         description="Detect scheduled task creation for persistence",
         format=RuleFormat.SIGMA,
         severity_hint="high",
@@ -106,7 +110,7 @@ descriptions = [
     "Suspicious DNS TXT queries",
 ]
 
-results = await sentinel.generate_batch(descriptions)
+results = await engine.generate_batch(descriptions)
 for r in results:
     if r.success:
         print(r.rule.name)
@@ -122,11 +126,28 @@ for r in results:
 | KQL | Coming | Microsoft Sentinel/Defender |
 | Snort/Suricata | Coming | Network IDS rules |
 
+## Local LLM Setup (Ollama)
+
+For fully offline operation:
+
+```bash
+# Install Ollama
+winget install Ollama.Ollama
+
+# Pull a model
+ollama pull qwen3:32b      # Balanced (20GB)
+ollama pull qwen3:14b      # Fast (9GB)
+ollama pull deepseek-r1:70b # Best quality (42GB, needs 64GB RAM)
+
+# Use with Artemis
+artemis generate "Detect lateral movement via PsExec" -p ollama -m qwen3:32b
+```
+
 ## Example Output
 
 Input:
 ```
-sentinel generate "Detect Cobalt Strike beacon spawning processes"
+artemis generate "Detect Cobalt Strike beacon spawning processes"
 ```
 
 Output:
@@ -136,7 +157,7 @@ id: 8a4b5c6d-1234-5678-9abc-def012345678
 status: experimental
 level: high
 description: Detects process spawning patterns typical of Cobalt Strike beacon
-author: Sentinel
+author: Artemis
 date: 2026/02/16
 references:
     - https://attack.mitre.org/techniques/T1055/
@@ -180,15 +201,17 @@ ruff check src tests
 ## Architecture
 
 ```
-sentinel/
-├── src/sentinel/
-│   ├── core.py           # Main Sentinel class
+project-artemis/
+├── src/artemis/
+│   ├── core.py           # Main Artemis class
 │   ├── cli.py            # Click CLI
 │   ├── llm.py            # LLM provider abstraction
 │   ├── models.py         # Pydantic models
 │   ├── generators/       # Rule generators by format
 │   │   ├── base.py       # Base generator class
-│   │   └── sigma.py      # Sigma generator
+│   │   ├── sigma.py      # Sigma generator
+│   │   ├── yara.py       # YARA generator
+│   │   └── splunk.py     # Splunk SPL generator
 │   ├── validators/       # Rule validators
 │   └── mappings/         # MITRE ATT&CK data
 ├── tests/
@@ -202,11 +225,12 @@ sentinel/
 ## Roadmap
 
 - [x] Sigma rule generation
+- [x] YARA rule generation
+- [x] Splunk SPL generation
 - [x] Rule validation
 - [x] MITRE ATT&CK auto-mapping
-- [ ] YARA rule generation
-- [ ] Splunk SPL generation
-- [ ] KQL (Microsoft) generation
+- [x] Local LLM support (Ollama)
+- [ ] KQL (Microsoft Sentinel/Defender) generation
 - [ ] Rule testing against sample data
 - [ ] Rule conversion between formats
 - [ ] Web UI

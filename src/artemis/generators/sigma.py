@@ -6,8 +6,8 @@ from typing import Optional
 
 import yaml
 
-from sentinel.generators.base import BaseGenerator
-from sentinel.models import (
+from artemis.generators.base import BaseGenerator
+from artemis.models import (
     ThreatDescription,
     DetectionRule,
     RuleFormat,

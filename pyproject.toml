@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sentinel"
-version = "0.1.0"
-description = "AI-powered detection engineering platform"
+name = "project-artemis"
+version = "0.3.0"
+description = "Project Artemis - AI-powered detection engineering platform"
 authors = [
     {name = "ByteCreeper", email = "bytecreeper@proton.me"}
 ]
@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Security",
 ]
-keywords = ["security", "detection", "sigma", "yara", "siem", "threat-detection"]
+keywords = ["security", "detection", "sigma", "yara", "siem", "threat-detection", "artemis"]
 
 dependencies = [
     "click>=8.0",
@@ -43,14 +43,14 @@ dev = [
 ]
 anthropic = ["anthropic>=0.18"]
 openai = ["openai>=1.0"]
-all = ["sentinel[anthropic,openai,dev]"]
+all = ["project-artemis[anthropic,openai,dev]"]
 
 [project.scripts]
-sentinel = "sentinel.cli:main"
+artemis = "artemis.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/whisperrr-ux/sentinel"
-Repository = "https://github.com/whisperrr-ux/sentinel"
+Homepage = "https://github.com/whisperrr-ux/project-artemis"
+Repository = "https://github.com/whisperrr-ux/project-artemis"
 
 [tool.setuptools.packages.find]
 where = ["src"]

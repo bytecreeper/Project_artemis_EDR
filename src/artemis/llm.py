@@ -126,9 +126,18 @@ class OllamaProvider(LLMProvider):
         self,
         model: str = "llama3.1",
         base_url: str = "http://localhost:11434",
+        timeout: int = 600,  # 10 minutes for large reasoning models
     ):
         self.model = model
         self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+    
+    def _strip_reasoning_tags(self, text: str) -> str:
+        """Strip <think>...</think> tags from reasoning model output."""
+        import re
+        # Remove <think>...</think> blocks (DeepSeek R1 chain-of-thought)
+        cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        return cleaned.strip()
     
     async def generate(self, prompt: str, system: Optional[str] = None) -> tuple[str, dict]:
         import httpx
@@ -141,7 +150,7 @@ class OllamaProvider(LLMProvider):
         if system:
             payload["system"] = system
         
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
@@ -149,11 +158,15 @@ class OllamaProvider(LLMProvider):
             response.raise_for_status()
             data = response.json()
         
-        text = data.get("response", "")
+        raw_text = data.get("response", "")
+        # Strip reasoning tags for R1/reasoning models
+        text = self._strip_reasoning_tags(raw_text)
+        
         metadata = {
             "model": self.model,
             "eval_count": data.get("eval_count"),
             "eval_duration": data.get("eval_duration"),
+            "had_reasoning": raw_text != text,  # Track if reasoning was stripped
         }
         return text, metadata
     

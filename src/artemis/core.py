@@ -1,28 +1,28 @@
-"""Core Sentinel class - main entry point for the library."""
+"""Core Artemis class - main entry point for the library."""
 
 import asyncio
 from typing import Optional
 
-from sentinel.models import (
+from artemis.models import (
     ThreatDescription,
     DetectionRule,
     GenerationResult,
     RuleFormat,
 )
-from sentinel.llm import LLMProvider, get_provider
-from sentinel.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
-from sentinel.generators.base import BaseGenerator
+from artemis.llm import LLMProvider, get_provider
+from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator
+from artemis.generators.base import BaseGenerator
 
 
-class Sentinel:
+class Artemis:
     """
     AI-powered detection engineering platform.
     
     Generate detection rules from natural language threat descriptions.
     
     Example:
-        >>> sentinel = Sentinel(provider="anthropic")
-        >>> result = await sentinel.generate(
+        >>> engine = Artemis(provider="anthropic")
+        >>> result = await engine.generate(
         ...     "Detect PowerShell downloading files from the internet",
         ...     format=RuleFormat.SIGMA
         ... )
@@ -37,7 +37,7 @@ class Sentinel:
         **provider_kwargs,
     ):
         """
-        Initialize Sentinel.
+        Initialize Artemis.
         
         Args:
             provider: LLM provider (anthropic, openai, ollama)
@@ -88,7 +88,7 @@ class Sentinel:
         Returns:
             GenerationResult with the generated rule or error
         """
-        from sentinel.models import Severity
+        from artemis.models import Severity
         
         # Parse severity hint
         severity = None

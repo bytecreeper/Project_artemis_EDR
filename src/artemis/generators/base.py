@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import Optional
 
-from sentinel.models import (
+from artemis.models import (
     ThreatDescription,
     DetectionRule,
     GenerationResult,
@@ -15,7 +15,7 @@ from sentinel.models import (
     Severity,
     MitreMapping,
 )
-from sentinel.llm import LLMProvider
+from artemis.llm import LLMProvider
 
 
 class BaseGenerator(ABC):
