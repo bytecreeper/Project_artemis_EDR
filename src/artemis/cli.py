@@ -253,7 +253,7 @@ def formats():
     table.add_row("yara", "Available", "Pattern matching for malware/files")
     table.add_row("splunk", "Available", "Splunk SPL queries")
     table.add_row("kql", "Available", "Microsoft Sentinel/Defender KQL queries")
-    table.add_row("snort", "Coming Soon", "Network IDS rules")
+    table.add_row("snort", "Available", "Snort/Suricata network IDS rules")
     
     console.print(table)
 
@@ -261,11 +261,11 @@ def formats():
 @main.command()
 @click.argument("rule_file", type=click.Path(exists=True))
 @click.option("-f", "--format", "rule_format", default="sigma",
-              type=click.Choice(["sigma", "yara", "splunk", "kql"]),
+              type=click.Choice(["sigma", "yara", "splunk", "kql", "snort"]),
               help="Rule format")
 def validate(rule_file: str, rule_format: str):
     """Validate an existing detection rule."""
-    from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator, KqlGenerator
+    from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator, KqlGenerator, SnortGenerator
     from artemis.models import DetectionRule
     
     content = Path(rule_file).read_text()
@@ -286,6 +286,7 @@ def validate(rule_file: str, rule_format: str):
         "yara": YaraGenerator,
         "splunk": SplunkGenerator,
         "kql": KqlGenerator,
+        "snort": SnortGenerator,
     }
     generator = generators[rule_format](llm=None)  # Don't need LLM for validation
     is_valid, errors = generator.validate_rule(rule)

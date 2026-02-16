@@ -10,7 +10,7 @@ from artemis.models import (
     RuleFormat,
 )
 from artemis.llm import LLMProvider, get_provider
-from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator, KqlGenerator
+from artemis.generators import SigmaGenerator, YaraGenerator, SplunkGenerator, KqlGenerator, SnortGenerator
 from artemis.generators.base import BaseGenerator
 
 
@@ -58,7 +58,8 @@ class Artemis:
             RuleFormat.YARA: YaraGenerator(self.llm),
             RuleFormat.SPLUNK: SplunkGenerator(self.llm),
             RuleFormat.KQL: KqlGenerator(self.llm),
-            # TODO: Add more generators
+            RuleFormat.SNORT: SnortGenerator(self.llm),
+            # TODO: Add Suricata-specific generator if needed
             # RuleFormat.KQL: KqlGenerator(self.llm),
         }
     

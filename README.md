@@ -228,10 +228,10 @@ project-artemis/
 - [x] YARA rule generation
 - [x] Splunk SPL generation
 - [x] KQL (Microsoft Sentinel/Defender) generation
+- [x] Snort/Suricata IDS rules
 - [x] Rule validation
 - [x] MITRE ATT&CK auto-mapping
 - [x] Local LLM support (Ollama)
-- [ ] Snort/Suricata IDS rules
 - [ ] Rule testing against sample data
 - [ ] Rule conversion between formats
 - [ ] Web UI
