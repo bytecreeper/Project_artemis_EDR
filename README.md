@@ -117,8 +117,8 @@ for r in results:
 | Format | Status | Description |
 |--------|--------|-------------|
 | Sigma | Available | Generic format, converts to 20+ SIEMs |
-| YARA | Coming | Pattern matching for files/malware |
-| Splunk SPL | Coming | Native Splunk queries |
+| YARA | Available | Pattern matching for files/malware |
+| Splunk SPL | Available | Native Splunk queries |
 | KQL | Coming | Microsoft Sentinel/Defender |
 | Snort/Suricata | Coming | Network IDS rules |
 
