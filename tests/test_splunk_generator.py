@@ -24,7 +24,7 @@ class MockLLM:
 SAMPLE_SPLUNK_RESPONSE = '''```spl
 `comment("Title: PowerShell Encoded Command Execution")`
 `comment("Description: Detects PowerShell execution with encoded commands, commonly used for obfuscation")`
-`comment("Author: Sentinel")`
+`comment("Author: Artemis")`
 `comment("MITRE: T1059.001, T1027")`
 `comment("Severity: high")`
 

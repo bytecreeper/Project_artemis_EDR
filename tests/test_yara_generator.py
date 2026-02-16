@@ -24,7 +24,7 @@ class MockLLM:
 SAMPLE_YARA_RESPONSE = '''```yara
 rule Cobalt_Strike_Beacon : malware trojan {
     meta:
-        author = "Sentinel"
+        author = "Artemis"
         description = "Detects Cobalt Strike beacon payload in memory or files"
         date = "2026/02/16"
         reference = "https://attack.mitre.org/software/S0154/"

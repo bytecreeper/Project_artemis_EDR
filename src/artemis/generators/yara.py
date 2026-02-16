@@ -29,7 +29,7 @@ YARA rule structure:
 ```
 rule RuleName : tag1 tag2 {
     meta:
-        author = "Sentinel"
+        author = "Artemis"
         description = "Description here"
         date = "2026-02-16"
         reference = "URL"
@@ -132,7 +132,7 @@ class YaraGenerator(BaseGenerator):
             tags=tags,
             references=references,
             false_positives=[],
-            author=self._extract_meta_field(yara_content, 'author') or "Sentinel",
+            author=self._extract_meta_field(yara_content, 'author') or "Artemis",
             date_created=self._extract_meta_field(yara_content, 'date'),
         )
     

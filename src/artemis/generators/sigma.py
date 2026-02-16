@@ -34,7 +34,7 @@ Key Sigma fields to always include:
 - status: experimental/test/stable
 - level: informational/low/medium/high/critical
 - description: What the rule detects
-- author: Sentinel
+- author: Artemis
 - date: YYYY/MM/DD
 - references: Related URLs
 - tags: MITRE ATT&CK tags (attack.tactic, attack.t1xxx)
@@ -126,7 +126,7 @@ class SigmaGenerator(BaseGenerator):
             tags=rule_data.get("tags", []),
             references=rule_data.get("references", []),
             false_positives=rule_data.get("falsepositives", []),
-            author=rule_data.get("author", "Sentinel"),
+            author=rule_data.get("author", "Artemis"),
             date_created=rule_data.get("date"),
         )
     

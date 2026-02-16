@@ -28,7 +28,7 @@ id: a1b2c3d4-5678-90ab-cdef-123456789012
 status: experimental
 level: high
 description: Detects PowerShell commands attempting to download content from the internet using Invoke-WebRequest, curl, or wget aliases
-author: Sentinel
+author: Artemis
 date: 2026/02/16
 references:
     - https://attack.mitre.org/techniques/T1059/001/

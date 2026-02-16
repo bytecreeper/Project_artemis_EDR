@@ -28,7 +28,7 @@ Output format - a complete Splunk alert query with metadata as comments:
 ```spl
 `comment("Title: Detection Name")`
 `comment("Description: What this detects")`
-`comment("Author: Sentinel")`
+`comment("Author: Artemis")`
 `comment("MITRE: T1059.001")`
 `comment("Severity: high")`
 
@@ -95,7 +95,7 @@ class SplunkGenerator(BaseGenerator):
         # Parse metadata from comments
         title = self._extract_comment_field(spl_content, 'Title') or self._generate_title(threat)
         description = self._extract_comment_field(spl_content, 'Description') or threat.description
-        author = self._extract_comment_field(spl_content, 'Author') or "Sentinel"
+        author = self._extract_comment_field(spl_content, 'Author') or "Artemis"
         
         # Extract MITRE
         mitre_str = self._extract_comment_field(spl_content, 'MITRE')

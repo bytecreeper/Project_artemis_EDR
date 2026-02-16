@@ -1,4 +1,4 @@
-"""Data models for Sentinel."""
+"""Data models for Project Artemis."""
 
 from enum import Enum
 from typing import Optional
@@ -55,7 +55,7 @@ class DetectionRule(BaseModel):
     false_positives: list[str] = Field(default_factory=list, description="Known false positive scenarios")
     
     # Metadata
-    author: str = Field(default="Sentinel", description="Rule author")
+    author: str = Field(default="Artemis", description="Rule author")
     date_created: Optional[str] = Field(None, description="Creation date")
     
     # Validation
