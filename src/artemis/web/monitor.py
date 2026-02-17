@@ -457,7 +457,28 @@ class NetworkMonitor:
         
         # Check for suspicious domains
         suspicious_tlds = ['.onion', '.bit', '.bazar']
-        suspicious_patterns = ['c2', 'command', 'control', 'beacon', 'mal']
+        suspicious_patterns = ['c2.', '.c2.', 'c2-', '-c2.', 'command', 'control', 'beacon.', '.beacon.', 'malware', 'botnet', 'rat.', 'trojan']
+        
+        # Whitelist known-good domains that trigger false positives
+        whitelisted_suffixes = [
+            'google.com', 'gvt2.com', 'gvt1.com', 'googleapis.com', 'gstatic.com',
+            'adobe.com', 'adobe.io', 'adobess.com', 'adobecc.com',
+            'microsoft.com', 'msftconnecttest.com', 'windows.com', 'windowsupdate.com',
+            'apple.com', 'icloud.com', 'mzstatic.com',
+            'amazon.com', 'amazonaws.com', 'cloudfront.net',
+            'facebook.com', 'fbcdn.net', 'instagram.com',
+            'twitter.com', 'twimg.com',
+            'github.com', 'githubusercontent.com',
+            'cloudflare.com', 'cloudflare-dns.com',
+            'akamai.com', 'akamaiedge.net', 'akamaitechnologies.com',
+            'fastly.net', 'fastlylb.net',
+        ]
+        
+        query_lower = query.lower()
+        
+        # Skip whitelisted domains
+        if any(query_lower.endswith(suffix) for suffix in whitelisted_suffixes):
+            return
         
         for tld in suspicious_tlds:
             if query.endswith(tld):
@@ -472,11 +493,11 @@ class NetworkMonitor:
                 return
         
         for pattern in suspicious_patterns:
-            if pattern in query.lower():
+            if pattern in query_lower:
                 self._create_threat(
                     severity="medium",
                     title=f"Suspicious domain pattern: {query}",
-                    description=f"Device {src_ip} queried domain matching pattern '{pattern}'",
+                    description=f"Device {src_ip} queried domain matching pattern '{pattern.strip('.-')}'",
                     source_ip=src_ip,
                     indicator=query,
                     category="suspicious_dns",

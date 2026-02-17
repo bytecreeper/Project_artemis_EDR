@@ -1790,15 +1790,20 @@
 
         function updateThreatsList() {
             const container = document.getElementById('threatsList');
+            const fullContainer = document.getElementById('threatsFullList');
             const countBadge = document.getElementById('threatCountBadge');
             countBadge.textContent = state.threats.length;
             document.getElementById('statThreats').textContent = state.threats.length;
             
             if (state.threats.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-icon">[OK]</div><div>No active threats</div></div>';
+                if (fullContainer) {
+                    fullContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">[OK]</div><div>No active threats detected</div><p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active</p></div>';
+                }
                 return;
             }
             
+            // Sidebar: show first 5
             container.innerHTML = state.threats.slice(0, 5).map(threat => `
                 <div class="threat-item ${threat.severity || 'medium'}">
                     <div class="threat-header">
@@ -1808,6 +1813,79 @@
                     <div class="threat-description">${threat.description || ''}</div>
                 </div>
             `).join('');
+            
+            // Full view: show all threats with more details
+            if (fullContainer) {
+                fullContainer.innerHTML = state.threats.map(threat => `
+                    <div class="card" style="margin-bottom: 0.75rem;">
+                        <div class="threat-item ${threat.severity || 'medium'}" style="margin: 0;">
+                            <div class="threat-header">
+                                <span class="threat-title">${escapeHtml(threat.title || 'Unknown Threat')}</span>
+                                <span class="threat-badge ${threat.severity || 'medium'}">${threat.severity || 'medium'}</span>
+                            </div>
+                            <div class="threat-description">${escapeHtml(threat.description || '')}</div>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                                ${threat.source_ip ? `<span>Source: <code>${escapeHtml(threat.source_ip)}</code></span>` : ''}
+                                ${threat.category ? `<span>Category: ${escapeHtml(threat.category)}</span>` : ''}
+                                ${threat.timestamp ? `<span>Time: ${new Date(threat.timestamp).toLocaleTimeString()}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 0.5rem;">
+                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="dismissThreat('${threat.id}')">Dismiss</button>
+                                <button class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.25rem;" onclick="analyzeThreat('${threat.id}')">Analyze</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function dismissThreat(id) {
+            state.threats = state.threats.filter(t => t.id !== id);
+            updateThreatsList();
+        }
+        
+        async function analyzeThreat(id) {
+            const threat = state.threats.find(t => t.id === id);
+            if (!threat) return;
+            
+            // Switch to dashboard view and run AI analysis with threat context
+            document.querySelector('[data-view="dashboard"]')?.click();
+            
+            const aiList = document.getElementById('aiList');
+            if (aiList.querySelector('.empty-state')) aiList.innerHTML = '';
+            
+            aiList.insertAdjacentHTML('afterbegin', `
+                <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--warning);">
+                    <div class="ai-header" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="ai-spinner" style="width: 12px; height: 12px;"></span>
+                        <span>Analyzing threat: ${escapeHtml(threat.title)}</span>
+                    </div>
+                    <div class="ai-response" style="color: var(--text-muted);">Querying AI...</div>
+                </div>
+            `);
+            
+            try {
+                const resp = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        context: `Analyze this threat: ${threat.title}. ${threat.description}. Source IP: ${threat.source_ip || 'unknown'}. Category: ${threat.category || 'unknown'}.`,
+                        threats: [threat],
+                        model: "qwen3:14b"
+                    })
+                });
+                const data = await resp.json();
+                
+                const panel = aiList.querySelector('.ai-panel');
+                if (panel && data.success) {
+                    panel.innerHTML = `
+                        <div class="ai-header">Threat Analysis: ${escapeHtml(threat.title)}</div>
+                        <div class="ai-response" style="white-space: pre-wrap;">${escapeHtml(data.analysis || 'No analysis')}</div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Threat analysis failed:', e);
+            }
         }
 
         // Modals
