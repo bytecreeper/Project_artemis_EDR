@@ -2149,7 +2149,80 @@
             }
         }
         
-        function analyzeDevice() { console.log('Analyze device'); }
+        async function analyzeDevice() {
+            if (!state.selectedDevice) {
+                alert('No device selected');
+                return;
+            }
+            
+            const device = state.devices.find(d => d.ip === state.selectedDevice);
+            if (!device) {
+                alert('Device not found');
+                return;
+            }
+            
+            // Show loading in the modal
+            const modal = document.getElementById('deviceModal');
+            const actionBtn = modal.querySelector('.btn-primary');
+            const originalText = actionBtn.textContent;
+            actionBtn.textContent = 'Analyzing...';
+            actionBtn.disabled = true;
+            
+            try {
+                const resp = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        context: `Analyze this device on my network: IP=${device.ip}, MAC=${device.mac}, Vendor=${device.vendor}, Type=${device.type}`,
+                        devices: [device],
+                        model: "deepseek-r1:70b"
+                    })
+                });
+                
+                const data = await resp.json();
+                
+                if (data.success) {
+                    // Show result in AI panel on main dashboard
+                    const aiList = document.getElementById('aiList');
+                    if (aiList.querySelector('.empty-state')) {
+                        aiList.innerHTML = '';
+                    }
+                    
+                    const riskColor = data.risk_level >= 7 ? 'var(--danger)' : 
+                                     data.risk_level >= 4 ? 'var(--warning)' : 'var(--success)';
+                    
+                    aiList.insertAdjacentHTML('afterbegin', `
+                        <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid ${riskColor};">
+                            <div class="ai-header" style="display: flex; justify-content: space-between;">
+                                <span>Device: ${device.ip}</span>
+                                <span style="color: ${riskColor}; font-weight: bold;">Risk: ${data.risk_level}/10</span>
+                            </div>
+                            <div class="ai-response" style="white-space: pre-wrap; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
+${escapeHtml(data.analysis || 'No analysis available')}
+                            </div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                ${new Date().toLocaleTimeString()}
+                            </div>
+                        </div>
+                    `);
+                    
+                    document.getElementById('statAnalyses').textContent = 
+                        parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
+                    
+                    // Close modal and show success
+                    closeModal();
+                    
+                } else {
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                actionBtn.textContent = originalText;
+                actionBtn.disabled = false;
+            }
+        }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
