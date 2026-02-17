@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Project Artemis Logo" width="200">
+</p>
+
 # 🛡️ Project Artemis
 
 > **Hello everyone, Welcome to Project Artemis.**
