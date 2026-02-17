@@ -1,93 +1,204 @@
-# Project Artemis
+# 🛡️ Project Artemis
 
-AI-powered detection engineering platform. Generate detection rules from natural language threat descriptions.
+**AI-Powered Security Operations Platform**
 
-## Features
+A comprehensive cybersecurity toolkit combining detection engineering, endpoint detection & response (EDR), network monitoring, and AI-assisted threat analysis. Built for security professionals who want enterprise-grade capabilities without the enterprise price tag.
 
-- **Natural language to detection rules** - Describe a threat, get a deployable rule
-- **Multiple formats** - Sigma, YARA, Splunk SPL (available), KQL, Snort (coming)
-- **Automatic MITRE ATT&CK mapping** - Rules tagged with relevant techniques
-- **Rule validation** - Syntax and logic checks before deployment
-- **Swappable LLM backends** - Anthropic, OpenAI, or local Ollama
-- **Local inference** - Run entirely offline with Ollama + DeepSeek/Qwen models
+![Python](https://img.shields.io/badge/python-3.10+-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
 
-## Installation
+---
+
+## ✨ Features
+
+### 🎯 Detection Engineering
+- **Natural language → detection rules** — Describe a threat, get deployable rules
+- **Multiple formats** — Sigma, YARA, Splunk SPL, KQL, Snort/Suricata
+- **MITRE ATT&CK mapping** — Automatic technique tagging
+- **Rule validation** — Syntax and logic checks
+
+### 🔍 EDR (Endpoint Detection & Response)
+- **Process monitoring** — Real-time process creation/termination tracking
+- **Sysmon integration** — Parse all 29 event types with threat detection
+- **Threat intelligence** — 6 free feeds, 27,000+ IoCs (IPs, hashes)
+- **Response actions** — Kill process, block IP, quarantine file
+- **MITRE ATT&CK heatmap** — Visual coverage across tactics
+- **Threat hunting** — Query syntax with field:value operators
+
+### 🌐 Network Security
+- **Device discovery** — ARP scanning with MAC vendor lookup (2000+ OUIs)
+- **Connection monitoring** — Real-time network connections via psutil
+- **Traffic analysis** — Bandwidth monitoring and anomaly detection
+- **Smart classification** — Automatic device type detection
+
+### 🤖 AI Analysis
+- **Local inference** — Ollama with DeepSeek/Qwen (no API keys needed)
+- **Cloud providers** — Anthropic Claude, OpenAI GPT-4
+- **Security analysis** — AI-powered threat assessment and recommendations
+
+### 📊 SOC Dashboard
+- **Real-time monitoring** — Device, connection, and threat views
+- **Security posture** — Risk scoring (0-100), A-F grades
+- **Unified timeline** — All security events in one view
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- Windows 10/11 (for full EDR features) or Linux/macOS
+- [Ollama](https://ollama.ai) (recommended for local AI)
+
+### Installation
 
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/whisperrr-ux/project-artemis.git
 cd project-artemis
 
-# Install with pip (editable mode for development)
+# Create virtual environment (recommended)
+python -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+# Install dependencies
 pip install -e ".[all]"
-
-# Or just core dependencies
-pip install -e .
 ```
 
-## Quick Start
-
-Set your API key (or use Ollama for local inference):
+### Configuration
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
-# or
-export OPENAI_API_KEY="your-key-here"
+# Copy example settings
+cp settings.example.json settings.json
+
+# Edit settings.json with your network range
+{
+  "provider": "ollama",
+  "model": "deepseek-r1:70b",
+  "network_range": "192.168.1.0/24",  # <-- Your network
+  "scan_interval": 5
+}
 ```
 
-Generate a Sigma rule:
+### Start the Dashboard
 
 ```bash
+# Start the web server
+python -m uvicorn src.artemis.web.app:app --host 127.0.0.1 --port 8000
+
+# Open http://127.0.0.1:8000 in your browser
+```
+
+---
+
+## 🔧 Detailed Setup
+
+### Local AI (Recommended)
+
+For fully offline, private operation:
+
+```bash
+# Install Ollama
+winget install Ollama.Ollama  # Windows
+# brew install ollama         # macOS
+# curl -fsSL https://ollama.ai/install.sh | sh  # Linux
+
+# Pull a model (choose based on your RAM)
+ollama pull qwen3:14b        # Fast, 9GB, needs 16GB RAM
+ollama pull qwen3:32b        # Balanced, 20GB, needs 32GB RAM  
+ollama pull deepseek-r1:70b  # Best quality, 42GB, needs 64GB RAM
+```
+
+### Cloud AI (Optional)
+
+```bash
+# Set environment variables
+export ANTHROPIC_API_KEY="sk-ant-..."  # For Claude
+export OPENAI_API_KEY="sk-..."         # For GPT-4
+```
+
+### Sysmon Setup (Windows EDR)
+
+Sysmon provides deep Windows telemetry for the EDR module:
+
+```powershell
+# Run as Administrator
+cd project-artemis
+
+# Install Sysmon with our config
+.\tools\Sysmon\Sysmon64.exe -accepteula -i config\sysmon-config.xml
+
+# Start event forwarding to Artemis
+.\scripts\Forward-SysmonEvents.ps1 -Continuous
+```
+
+### Threat Intelligence
+
+Update threat feeds (27,000+ IoCs from 6 free sources):
+
+```bash
+# Via API
+curl -X POST http://127.0.0.1:8000/api/edr/threat-intel/update
+
+# Or via CLI
+artemis edr update-feeds
+```
+
+---
+
+## 📖 Usage
+
+### CLI - Detection Engineering
+
+```bash
+# Generate a Sigma rule
 artemis generate "Detect PowerShell downloading files from the internet"
+
+# Generate YARA with local AI
+artemis generate "Detect Mimikatz in memory" -f yara -p ollama -m qwen3:32b
+
+# Batch generation from file
+artemis batch threats.txt --save rules/
 ```
 
-With local Ollama:
+### CLI - Network Scanning
 
 ```bash
-artemis generate "Mimikatz credential dumping via lsass" \
-  -p ollama -m qwen3:32b \
-  --severity critical \
-  --save mimikatz.yml
+# Discover devices on your network
+artemis network scan -s 192.168.1.0/24
+
+# Get device info
+artemis network info 192.168.1.1
 ```
 
-## CLI Usage
+### API Endpoints
 
-```
-artemis generate <description>    Generate a detection rule
-artemis batch <file>              Generate rules from file (one per line)
-artemis validate <rule.yml>       Validate an existing rule
-artemis formats                   List supported formats
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/devices` | GET | List discovered devices |
+| `/api/connections` | GET | Active network connections |
+| `/api/threats` | GET | Current threat indicators |
+| `/api/ai/analyze` | POST | AI security analysis |
+| `/api/edr/status` | GET | EDR component status |
+| `/api/edr/alerts` | GET | All EDR alerts |
+| `/api/edr/threat-intel/check` | POST | Check IoCs against feeds |
+| `/api/edr/threat-intel/update` | POST | Update threat feeds |
 
-### Options
-
-```
--f, --format    Output format (sigma, yara, splunk, kql, snort)
--p, --provider  LLM provider (anthropic, openai, ollama)
--m, --model     Model name override
--c, --context   Additional context for generation
--i, --indicator Known IOC (can repeat: -i hash1 -i hash2)
--s, --severity  Severity hint (low, medium, high, critical)
--o, --output    Output format (pretty, json, raw)
---save          Save rule to file
-```
-
-## Python API
+### Python API
 
 ```python
 import asyncio
 from artemis import Artemis, RuleFormat
 
 async def main():
-    # Initialize with Anthropic (default)
-    engine = Artemis(provider="anthropic")
-    
-    # Or use local Ollama
     engine = Artemis(provider="ollama", model="qwen3:32b")
     
-    # Generate a Sigma rule
     result = await engine.generate(
-        description="Detect scheduled task creation for persistence",
+        description="Detect scheduled task persistence",
         format=RuleFormat.SIGMA,
         severity_hint="high",
     )
@@ -95,160 +206,81 @@ async def main():
     if result.success:
         print(result.rule.content)
         print(f"MITRE: {[m.technique_id for m in result.rule.mitre]}")
-    else:
-        print(f"Error: {result.error}")
 
 asyncio.run(main())
 ```
 
-### Batch Generation
+---
 
-```python
-descriptions = [
-    "PowerShell execution with encoded commands",
-    "WMI process creation",
-    "Suspicious DNS TXT queries",
-]
-
-results = await engine.generate_batch(descriptions)
-for r in results:
-    if r.success:
-        print(r.rule.name)
-```
-
-## Supported Formats
-
-| Format | Status | Description |
-|--------|--------|-------------|
-| Sigma | Available | Generic format, converts to 20+ SIEMs |
-| YARA | Available | Pattern matching for files/malware |
-| Splunk SPL | Available | Native Splunk queries |
-| KQL | Available | Microsoft Sentinel/Defender queries |
-| Snort/Suricata | Coming | Network IDS rules |
-
-## Local LLM Setup (Ollama)
-
-For fully offline operation:
-
-```bash
-# Install Ollama
-winget install Ollama.Ollama
-
-# Pull a model
-ollama pull qwen3:32b      # Balanced (20GB)
-ollama pull qwen3:14b      # Fast (9GB)
-ollama pull deepseek-r1:70b # Best quality (42GB, needs 64GB RAM)
-
-# Use with Artemis
-artemis generate "Detect lateral movement via PsExec" -p ollama -m qwen3:32b
-```
-
-## Example Output
-
-Input:
-```
-artemis generate "Detect Cobalt Strike beacon spawning processes"
-```
-
-Output:
-```yaml
-title: Cobalt Strike Beacon Process Spawning
-id: 8a4b5c6d-1234-5678-9abc-def012345678
-status: experimental
-level: high
-description: Detects process spawning patterns typical of Cobalt Strike beacon
-author: Artemis
-date: 2026/02/16
-references:
-    - https://attack.mitre.org/techniques/T1055/
-tags:
-    - attack.execution
-    - attack.t1059
-    - attack.defense_evasion
-    - attack.t1055
-logsource:
-    category: process_creation
-    product: windows
-detection:
-    selection:
-        ParentImage|endswith:
-            - '\rundll32.exe'
-            - '\regsvr32.exe'
-            - '\mshta.exe'
-        Image|endswith:
-            - '\cmd.exe'
-            - '\powershell.exe'
-    condition: selection
-falsepositives:
-    - Legitimate administration scripts
-    - Software installers
-```
-
-## Penetration Testing (Shannon-Inspired)
-
-Project Artemis includes a Shannon-inspired AI penetration testing module. It performs autonomous security assessments using your local DeepSeek model.
-
-### Quick Start
-
-```bash
-# Run a full pentest against a target
-artemis pentest run https://example.com
-
-# Whitebox testing with source code
-artemis pentest run https://app.local -r ./source-code
-
-# With authentication
-artemis pentest run https://app.local --login-url /login --username admin --password secret
-
-# Quick reconnaissance only
-artemis pentest recon https://example.com
-```
-
-### Pentest Pipeline
-
-The pentest runs in 5 phases:
-
-1. **Pre-Reconnaissance** - External scans (nmap, whatweb)
-2. **Reconnaissance** - Attack surface mapping and code analysis
-3. **Vulnerability Analysis** - 5 parallel agents:
-   - Injection (SQLi, Command Injection, SSTI, LFI)
-   - XSS (Reflected, Stored, DOM-based)
-   - Authentication (JWT, Session, Password Reset)
-   - Authorization (IDOR, Privilege Escalation)
-   - SSRF (Server-Side Request Forgery)
-4. **Exploitation** - Proof-of-concept execution
-5. **Reporting** - Professional pentest report (Markdown + HTML)
-
-### Dashboard Integration
-
-The SOC dashboard includes a Pentest tab for:
-- Starting and monitoring pentests
-- Real-time progress tracking
-- Vulnerability discovery feed
-- Professional report viewer
-
-### CLI Commands
+## 🏗️ Architecture
 
 ```
-artemis pentest run <url>        Start a full penetration test
-artemis pentest recon <url>      Quick reconnaissance only
-artemis pentest status           Show status of recent runs
-artemis pentest report <path>    View a pentest report
+project-artemis/
+├── src/artemis/
+│   ├── core.py              # Main Artemis engine
+│   ├── cli.py               # Click CLI
+│   ├── llm.py               # LLM provider abstraction
+│   ├── models.py            # Pydantic models
+│   │
+│   ├── generators/          # Detection rule generators
+│   │   ├── sigma.py         # Sigma rules
+│   │   ├── yara.py          # YARA rules
+│   │   └── splunk.py        # Splunk SPL
+│   │
+│   ├── edr/                 # EDR module
+│   │   ├── sysmon.py        # Sysmon event parser (29 types)
+│   │   ├── process_monitor.py # Real-time process monitoring
+│   │   ├── threat_intel.py  # Threat feed integration
+│   │   ├── risk_score.py    # Security posture scoring
+│   │   ├── response.py      # Kill/block/quarantine actions
+│   │   └── timeline.py      # Unified event timeline
+│   │
+│   ├── agent/               # Network monitoring
+│   │   ├── scanner.py       # ARP network scanner
+│   │   ├── fingerprint.py   # Device classification
+│   │   └── traffic.py       # Traffic monitoring
+│   │
+│   └── web/                 # Web dashboard
+│       ├── app.py           # FastAPI application
+│       └── templates/       # Jinja2 templates
+│
+├── config/
+│   └── sysmon-config.xml    # Production Sysmon config
+│
+├── scripts/
+│   └── Forward-SysmonEvents.ps1  # Event forwarding
+│
+├── tools/
+│   └── Sysmon/              # Sysmon binaries
+│
+├── docs/                    # Documentation
+├── tests/                   # Test suite
+└── settings.example.json    # Example configuration
 ```
 
-### Options
+---
 
-```
--r, --repo         Source code path for whitebox testing
--m, --model        LLM model (default: deepseek-r1:70b)
---login-url        Login page URL for authenticated testing
---username         Authentication username
---password         Authentication password
---sequential       Run vuln agents sequentially (not parallel)
--v, --verbose      Verbose logging
-```
+## 🔒 Security Considerations
 
-## Development
+### What This Tool Does
+- Monitors YOUR network for threats
+- Runs locally with no external data transmission (when using Ollama)
+- Provides defensive security capabilities
+
+### What This Tool Does NOT Do
+- No offensive capabilities against external targets
+- No data exfiltration
+- No persistent backdoors
+
+### Best Practices
+1. **Network range** — Only configure YOUR network in `settings.json`
+2. **API keys** — Never commit API keys; use environment variables
+3. **Threat intel** — IoCs are pulled from public feeds only
+4. **Response actions** — Kill/block/quarantine are LOCAL only
+
+---
+
+## 🛠️ Development
 
 ```bash
 # Install dev dependencies
@@ -260,57 +292,68 @@ pytest
 # Format code
 black src tests
 ruff check src tests
+
+# Type checking
+mypy src
 ```
 
-## Architecture
+### Contributing
 
-```
-project-artemis/
-├── src/artemis/
-│   ├── core.py           # Main Artemis class
-│   ├── cli.py            # Click CLI
-│   ├── llm.py            # LLM provider abstraction
-│   ├── models.py         # Pydantic models
-│   ├── generators/       # Rule generators by format
-│   │   ├── base.py       # Base generator class
-│   │   ├── sigma.py      # Sigma generator
-│   │   ├── yara.py       # YARA generator
-│   │   └── splunk.py     # Splunk SPL generator
-│   ├── validators/       # Rule validators
-│   └── mappings/         # MITRE ATT&CK data
-├── tests/
-├── samples/
-│   ├── logs/             # Sample logs for testing
-│   ├── malware/          # Sample malware for YARA
-│   └── rules/            # Example rules
-└── pyproject.toml
-```
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Roadmap
+Please ensure:
+- No hardcoded IPs, paths, or credentials
+- Tests pass
+- Code is formatted with Black
 
-- [x] Sigma rule generation
-- [x] YARA rule generation
-- [x] Splunk SPL generation
-- [x] KQL (Microsoft Sentinel/Defender) generation
-- [x] Snort/Suricata IDS rules
-- [x] Rule validation
-- [x] MITRE ATT&CK auto-mapping
+---
+
+## 📚 Documentation
+
+- [EDR Module Guide](docs/EDR_MODULE.md)
+- [Dashboard Improvements](docs/DASHBOARD_IMPROVEMENTS.md)
+- [API Reference](docs/API.md) *(coming soon)*
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Sigma/YARA/SPL rule generation
+- [x] MITRE ATT&CK mapping
 - [x] Local LLM support (Ollama)
-- [x] Web UI / SOC Dashboard
-- [x] Network discovery and monitoring
-- [x] Device fingerprinting (1000+ MAC OUIs)
-- [x] AI-powered threat detection
-- [x] Shannon-inspired penetration testing
-- [x] Multi-agent vulnerability analysis
-- [x] Professional pentest reporting
-- [ ] Rule testing against sample data
-- [ ] Rule conversion between formats
-- [ ] Browser-based exploitation (Playwright)
+- [x] Web dashboard
+- [x] Network discovery
+- [x] EDR with Sysmon integration
+- [x] Threat intelligence (6 feeds)
+- [x] Response actions
+- [x] Risk scoring
+- [ ] Rule testing against sample logs
+- [ ] Cross-platform EDR (Linux auditd)
+- [ ] SOAR playbook automation
+- [ ] Sigma rule sharing/import
 
-## Author
+---
 
-ByteCreeper (bytecreeper@proton.me)
+## 📄 License
 
-## License
+MIT License — see [LICENSE](LICENSE) for details.
 
-MIT
+---
+
+## 🙏 Acknowledgments
+
+- [Sigma](https://github.com/SigmaHQ/sigma) — Detection rule format
+- [Sysmon](https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon) — Windows telemetry
+- [Ollama](https://ollama.ai) — Local LLM inference
+- [SwiftOnSecurity](https://github.com/SwiftOnSecurity/sysmon-config) — Sysmon config inspiration
+- Threat feed providers: URLhaus, Feodo Tracker, ThreatFox, MalwareBazaar, blocklist.de, Emerging Threats
+
+---
+
+<p align="center">
+  <b>Built for defenders, by defenders.</b>
+</p>
