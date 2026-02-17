@@ -1008,6 +1008,20 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Debug Log Panel -->
+                            <div class="card" style="max-height: 180px;">
+                                <div class="card-header" style="cursor: pointer;" onclick="toggleDebugLog()">
+                                    <span>🔧 Debug Log</span>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <button class="btn btn-secondary" style="padding: 0.15rem 0.4rem; font-size: 0.65rem;" onclick="event.stopPropagation(); clearDebugLogPanel()">Clear</button>
+                                        <span id="debugToggle" style="font-family: monospace; font-size: 0.8rem;">[-]</span>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="debugLogBody" style="padding: 0;">
+                                    <div class="debug-log" id="debugLogPanel" style="height: 130px; font-size: 0.7rem;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1458,7 +1472,109 @@
             pentestSessionId: null,
             ws: null,
             debugExpanded: true,
-            debugLogs: []
+            debugLogs: [],
+            debugLogVisible: true
+        };
+
+        // ========== DEBUG LOGGER ==========
+        function debugLog(level, message, data = null) {
+            const panel = document.getElementById('debugLogPanel');
+            if (!panel) return;
+            
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+            const levelColors = {
+                'info': '#3b82f6',
+                'http': '#22d3ee', 
+                'send': '#a855f7',
+                'recv': '#22c55e',
+                'ai': '#f59e0b',
+                'error': '#ef4444',
+                'warn': '#eab308',
+                'debug': '#6b7280'
+            };
+            const levelIcons = {
+                'info': 'ℹ',
+                'http': '→',
+                'send': '↑',
+                'recv': '↓',
+                'ai': '🤖',
+                'error': '✗',
+                'warn': '⚠',
+                'debug': '·'
+            };
+            
+            const color = levelColors[level] || '#a0a0a0';
+            const icon = levelIcons[level] || '•';
+            
+            let logLine = `<span style="color: #666;">${time}</span> <span style="color: ${color};">${icon} [${level.toUpperCase()}]</span> ${escapeHtml(message)}`;
+            
+            if (data) {
+                const dataStr = typeof data === 'string' ? data : JSON.stringify(data, null, 0);
+                const truncated = dataStr.length > 200 ? dataStr.substring(0, 200) + '...' : dataStr;
+                logLine += `\n         <span style="color: #555;">${escapeHtml(truncated)}</span>`;
+            }
+            
+            panel.innerHTML += logLine + '\n';
+            panel.scrollTop = panel.scrollHeight;
+            
+            // Keep last 100 lines
+            const lines = panel.innerHTML.split('\n');
+            if (lines.length > 100) {
+                panel.innerHTML = lines.slice(-100).join('\n');
+            }
+            
+            // Also log to console
+            console.log(`[${level}] ${message}`, data || '');
+        }
+        
+        function toggleDebugLog() {
+            const body = document.getElementById('debugLogBody');
+            const toggle = document.getElementById('debugToggle');
+            state.debugLogVisible = !state.debugLogVisible;
+            body.style.display = state.debugLogVisible ? 'block' : 'none';
+            toggle.textContent = state.debugLogVisible ? '[-]' : '[+]';
+        }
+        
+        function clearDebugLogPanel() {
+            const panel = document.getElementById('debugLogPanel');
+            if (panel) {
+                panel.innerHTML = '<span style="color: #666;">Log cleared at ' + new Date().toLocaleTimeString() + '</span>\n';
+            }
+        }
+        
+        // Wrap fetch to auto-log
+        const originalFetch = window.fetch;
+        window.fetch = async function(url, options = {}) {
+            const method = options.method || 'GET';
+            const isAPI = url.toString().includes('/api/');
+            
+            if (isAPI) {
+                debugLog('http', `${method} ${url}`);
+                if (options.body) {
+                    try {
+                        const bodyData = JSON.parse(options.body);
+                        debugLog('send', 'Request payload', bodyData);
+                    } catch(e) {}
+                }
+            }
+            
+            const startTime = performance.now();
+            
+            try {
+                const response = await originalFetch.apply(this, arguments);
+                const elapsed = (performance.now() - startTime).toFixed(0);
+                
+                if (isAPI) {
+                    debugLog('recv', `${response.status} ${response.statusText} (${elapsed}ms)`);
+                }
+                
+                return response;
+            } catch (error) {
+                if (isAPI) {
+                    debugLog('error', `Request failed: ${error.message}`);
+                }
+                throw error;
+            }
         };
 
         // Navigation
@@ -1599,6 +1715,8 @@
             const conn = state.connections[index];
             if (!conn) return;
             
+            debugLog('ai', `Analyzing connection: ${conn.process || 'unknown'} → ${conn.remote || 'unknown'}`);
+            
             const aiList = document.getElementById('aiList');
             if (aiList.querySelector('.empty-state')) {
                 aiList.innerHTML = '';
@@ -1618,12 +1736,19 @@
                 </div>
             `);
             
+            const startTime = performance.now();
+            
             try {
                 const port = parseInt((conn.remote || '').split(':').pop()) || 0;
+                debugLog('debug', `Port: ${port}, State: ${conn.state || 'unknown'}`);
+                
                 const resp = await fetch(`/api/ai/analyze-connection?process=${encodeURIComponent(conn.process || 'unknown')}&remote=${encodeURIComponent(conn.remote || 'unknown')}&port=${port}`, {
                     method: 'POST'
                 });
                 const data = await resp.json();
+                
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                debugLog('recv', `Connection analysis complete in ${elapsed}s - ${data.suspicious ? 'SUSPICIOUS' : 'OK'}`);
                 
                 const panel = document.getElementById(tempId);
                 if (panel) {
@@ -1636,7 +1761,7 @@
                             <span style="color: ${color}; font-size: 0.7rem;">${data.suspicious ? 'SUSPICIOUS' : 'OK'}</span>
                         </div>
                         <div class="ai-response" style="font-size: 0.8rem;">${escapeHtml(data.analysis || 'No analysis available')}</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">${new Date().toLocaleTimeString()}</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">${new Date().toLocaleTimeString()} • ${elapsed}s</div>
                     `;
                 }
                 
@@ -1644,6 +1769,7 @@
                     parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
                     
             } catch (e) {
+                debugLog('error', `Connection analysis failed: ${e.message}`);
                 const panel = document.getElementById(tempId);
                 if (panel) {
                     panel.style.borderLeft = '3px solid var(--danger)';
@@ -1935,25 +2061,37 @@
                 btn.textContent = 'Scanning...';
             }
             
-            console.log('Starting network scan...');
+            debugLog('info', '───────────────────────────────────────');
+            debugLog('info', 'Starting network scan...');
+            const scanStart = performance.now();
             
             try {
                 const response = await fetch('/api/scan/network', { method: 'POST' });
                 const data = await response.json();
-                console.log('Scan result:', data);
+                
+                const scanTime = ((performance.now() - scanStart) / 1000).toFixed(2);
                 
                 if (data.success) {
                     state.devices = data.devices || [];
+                    debugLog('recv', `Scan complete in ${scanTime}s - Found ${data.devices_found || state.devices.length} devices`);
+                    
+                    // Log device breakdown
+                    const types = {};
+                    state.devices.forEach(d => {
+                        const t = d.type || 'unknown';
+                        types[t] = (types[t] || 0) + 1;
+                    });
+                    debugLog('debug', `Device types: ${Object.entries(types).map(([k,v]) => `${k}:${v}`).join(', ')}`);
+                    
                     updateDevicesList();
                     updateDevicesGrid();
                     refreshTopology();
                     document.getElementById('statDevices').textContent = state.devices.length;
-                    console.log(`Found ${data.devices_found} devices`);
                 } else {
-                    console.error('Scan failed:', data.error);
+                    debugLog('error', `Scan failed: ${data.error || 'Unknown error'}`);
                 }
             } catch (e) {
-                console.error('Scan error:', e);
+                debugLog('error', `Scan exception: ${e.message}`);
             } finally {
                 if (btn) {
                     btn.disabled = false;
@@ -2398,7 +2536,11 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Artemis Dashboard initializing...');
+            debugLog('info', '═══════════════════════════════════════');
+            debugLog('info', 'Artemis Security Dashboard v2.0');
+            debugLog('info', '═══════════════════════════════════════');
+            debugLog('debug', `User-Agent: ${navigator.userAgent.split(' ').slice(-2).join(' ')}`);
+            debugLog('debug', `Viewport: ${window.innerWidth}x${window.innerHeight}`);
             
             connectWS();
             refreshTopology();
@@ -2412,7 +2554,7 @@
             
             // Auto-scan network on first load
             setTimeout(() => {
-                console.log('Auto-scanning network...');
+                debugLog('info', 'Auto-scan triggered (startup)');
                 scanNetwork();
             }, 1000);
             
@@ -2426,6 +2568,8 @@
             
             // Run AI analysis periodically (every 60 seconds)
             setInterval(runAutoAIAnalysis, 60000);
+            
+            debugLog('info', 'Dashboard initialized - polling active');
         });
         
         // ========== AUTO AI ANALYSIS (DeepSeek) ==========
@@ -2441,6 +2585,7 @@
             
             // Only run if we have data to analyze
             if (state.connections.length === 0 && state.devices.length === 0 && state.threats.length === 0) {
+                debugLog('debug', 'Auto-analysis skipped: no data');
                 return;
             }
             
@@ -2466,6 +2611,9 @@
                 
                 // Only call AI if there's something interesting
                 if (suspiciousConns.length > 0 || state.threats.length > 0) {
+                    debugLog('ai', 'Auto-analysis triggered');
+                    debugLog('debug', `${suspiciousConns.length} suspicious connections, ${state.threats.length} threats`);
+                    
                     // Show subtle auto-scan indicator
                     const miniProgress = document.createElement('div');
                     miniProgress.id = 'auto-ai-progress';
@@ -2477,6 +2625,7 @@
                     }
                     aiList.insertBefore(miniProgress, aiList.firstChild);
                     
+                    const startTime = performance.now();
                     const resp = await fetch('/api/ai/analyze', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2484,12 +2633,16 @@
                     });
                     
                     const data = await resp.json();
+                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
                     
                     // Remove progress indicator
                     document.getElementById('auto-ai-progress')?.remove();
                     
                     if (data.success) {
+                        debugLog('recv', `Auto-analysis complete in ${elapsed}s - Risk: ${data.risk_level}/10`);
                         addAIAnalysis(data);
+                    } else {
+                        debugLog('error', `Auto-analysis failed: ${data.error}`);
                     }
                 } else {
                     // Quick heuristic check without AI call
@@ -2497,7 +2650,7 @@
                 }
                 
             } catch (e) {
-                console.error('AI analysis error:', e);
+                debugLog('error', `Auto-analysis exception: ${e.message}`);
                 document.getElementById('auto-ai-progress')?.remove();
             } finally {
                 aiAnalysisRunning = false;
@@ -2584,6 +2737,10 @@ ${escapeHtml(data.analysis || 'No analysis available')}
             const aiList = document.getElementById('aiList');
             const startTime = Date.now();
             
+            debugLog('ai', '═══════════════════════════════════════');
+            debugLog('ai', 'Starting manual AI security analysis');
+            debugLog('info', `Model: deepseek-r1:70b`);
+            
             // Build progress UI
             const progressId = 'ai-progress-' + startTime;
             aiList.innerHTML = `
@@ -2605,7 +2762,6 @@ ${escapeHtml(data.analysis || 'No analysis available')}
             
             function logStep(icon, text, status = 'active') {
                 const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                // Mark previous active as done
                 logEl.querySelectorAll('.step-active').forEach(el => {
                     el.classList.remove('step-active');
                     el.classList.add('step-done');
@@ -2622,13 +2778,27 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 barEl.style.width = pct + '%';
             }
             
-            console.log('Starting AI analysis with deepseek-r1:70b...');
-            
             try {
                 // Step 1: Collecting data
                 logStep('◉', 'Collecting network state');
                 setProgress(10);
-                await sleep(100);
+                
+                debugLog('debug', `Collecting state: ${state.connections.length} connections, ${state.devices.length} devices, ${state.threats.length} threats`);
+                
+                // Identify suspicious items
+                const suspiciousConns = state.connections.filter(conn => {
+                    const remote = conn.remote || '';
+                    const port = parseInt(remote.split(':').pop()) || 0;
+                    return [4444, 5555, 6666, 1337, 31337, 8888, 9999, 6667, 22, 23, 3389].includes(port) ||
+                           remote.includes('tor') || remote.includes('onion');
+                });
+                
+                const externalConns = state.connections.filter(conn => {
+                    const remote = conn.remote || '';
+                    return !remote.startsWith('127.') && !remote.startsWith('192.168.') && !remote.startsWith('10.') && remote !== '-';
+                });
+                
+                debugLog('debug', `Found ${suspiciousConns.length} suspicious ports, ${externalConns.length} external connections`);
                 
                 const payload = {
                     connections: state.connections.slice(0, 20),
@@ -2637,13 +2807,21 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     model: "deepseek-r1:70b"
                 };
                 
-                logStep('◉', `Prepared ${state.connections.length} connections, ${state.devices.length} devices`);
+                const payloadSize = JSON.stringify(payload).length;
+                debugLog('info', `Payload prepared: ${payloadSize} bytes`);
+                debugLog('debug', `  - ${payload.connections.length} connections`);
+                debugLog('debug', `  - ${payload.devices.length} devices`);
+                debugLog('debug', `  - ${payload.threats.length} threats`);
+                
+                logStep('◉', `Prepared ${state.connections.length} conn, ${state.devices.length} devices`);
                 setProgress(20);
-                await sleep(100);
                 
                 // Step 2: Sending to AI
                 logStep('◉', 'Sending to DeepSeek R1:70b');
                 setProgress(30);
+                
+                debugLog('ai', 'Sending request to /api/ai/analyze...');
+                const sendTime = performance.now();
                 
                 const resp = await fetch('/api/ai/analyze', {
                     method: 'POST',
@@ -2651,15 +2829,33 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     body: JSON.stringify(payload)
                 });
                 
+                const networkTime = ((performance.now() - sendTime) / 1000).toFixed(2);
+                debugLog('ai', `Response received in ${networkTime}s`);
+                
                 logStep('◉', 'Processing response');
                 setProgress(80);
                 
                 const data = await resp.json();
                 
+                if (data.success) {
+                    debugLog('recv', `Analysis complete - Risk Level: ${data.risk_level}/10`);
+                    debugLog('debug', `Analysis length: ${(data.analysis || '').length} chars`);
+                    if (data.recommendations) {
+                        debugLog('debug', `Recommendations: ${data.recommendations.length}`);
+                    }
+                    if (data.model_used) {
+                        debugLog('info', `Model used: ${data.model_used}`);
+                    }
+                } else {
+                    debugLog('error', `Analysis failed: ${data.error || 'Unknown error'}`);
+                }
+                
                 // Final step
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
                 logStep('✓', `Complete in ${elapsed}s`, 'done');
                 setProgress(100);
+                debugLog('ai', `Total time: ${elapsed}s`);
+                debugLog('ai', '═══════════════════════════════════════');
                 
                 await sleep(500);
                 
@@ -2675,6 +2871,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     </div>`;
                 }
             } catch (e) {
+                debugLog('error', `Exception: ${e.message}`);
                 logStep('✗', 'Error: ' + e.message, 'done');
                 setProgress(100);
                 barEl.style.background = 'var(--danger)';
