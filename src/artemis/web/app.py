@@ -796,6 +796,197 @@ async def get_scan_results():
     }
 
 
+# =============================================================================
+# RED TEAM / SHANNON INTEGRATION
+# =============================================================================
+
+# Lazy-load red team controller to avoid circular imports
+_redteam_controller = None
+
+def get_redteam_controller():
+    """Get or create the red team controller."""
+    global _redteam_controller
+    if _redteam_controller is None:
+        from artemis.redteam import RedTeamController
+        project_dir = Path(__file__).parent.parent.parent.parent
+        _redteam_controller = RedTeamController(data_dir=project_dir)
+    return _redteam_controller
+
+
+class LaunchJobRequest(BaseModel):
+    """Request to launch a pentest job."""
+    target: str
+    mode: str = "recon"  # recon, vuln_scan, full_audit, counter_recon, counter_full
+    config: Optional[dict] = None
+
+
+class ApproveJobRequest(BaseModel):
+    """Request to approve a job."""
+    approved_by: str = "user"
+
+
+@app.get("/api/redteam/status")
+async def redteam_status():
+    """Get red team system status."""
+    try:
+        controller = get_redteam_controller()
+        stats = controller.get_stats()
+        
+        # Check Shannon availability
+        shannon_available = False
+        try:
+            from artemis.redteam.shannon import ShannonEngine
+            shannon_dir = Path(__file__).parent.parent.parent.parent / "shannon-integration"
+            if shannon_dir.exists():
+                engine = ShannonEngine(shannon_dir, controller.reports_dir)
+                shannon_available = engine.is_available()
+        except:
+            pass
+        
+        return {
+            "enabled": True,
+            "shannon_available": shannon_available,
+            "stats": stats,
+        }
+    except Exception as e:
+        return {
+            "enabled": False,
+            "error": str(e),
+        }
+
+
+@app.get("/api/redteam/jobs")
+async def list_redteam_jobs(status: Optional[str] = None, limit: int = 50):
+    """List pentest jobs."""
+    controller = get_redteam_controller()
+    
+    from artemis.redteam import JobStatus
+    status_filter = JobStatus(status) if status else None
+    
+    jobs = controller.list_jobs(status=status_filter, limit=limit)
+    return {
+        "jobs": [j.to_dict() for j in jobs],
+        "total": len(jobs),
+    }
+
+
+@app.post("/api/redteam/launch")
+async def launch_redteam_job(req: LaunchJobRequest):
+    """Launch a new pentest job."""
+    controller = get_redteam_controller()
+    
+    from artemis.redteam import ScanMode, TriggerType
+    
+    try:
+        mode = ScanMode(req.mode)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid mode: {req.mode}")
+    
+    try:
+        job = await controller.create_job(
+            target=req.target,
+            mode=mode,
+            trigger=TriggerType.MANUAL,
+            config=req.config,
+        )
+        return {
+            "success": True,
+            "job": job.to_dict(),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/redteam/jobs/{job_id}")
+async def get_redteam_job(job_id: str):
+    """Get a specific job."""
+    controller = get_redteam_controller()
+    job = controller.get_job(job_id)
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return {"job": job.to_dict()}
+
+
+@app.post("/api/redteam/jobs/{job_id}/approve")
+async def approve_redteam_job(job_id: str, req: ApproveJobRequest):
+    """Approve a job requiring approval."""
+    controller = get_redteam_controller()
+    
+    try:
+        job = await controller.approve_job(job_id, req.approved_by)
+        return {
+            "success": True,
+            "job": job.to_dict(),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/redteam/jobs/{job_id}/cancel")
+async def cancel_redteam_job(job_id: str):
+    """Cancel a job."""
+    controller = get_redteam_controller()
+    
+    try:
+        job = await controller.cancel_job(job_id)
+        return {
+            "success": True,
+            "job": job.to_dict(),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/redteam/jobs/{job_id}/report")
+async def get_redteam_report(job_id: str):
+    """Get the report for a completed job."""
+    controller = get_redteam_controller()
+    
+    job = controller.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    report = controller.get_report(job_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not available")
+    
+    return {
+        "job_id": job_id,
+        "report": report,
+        "format": "markdown",
+    }
+
+
+@app.post("/api/redteam/quick-recon")
+async def quick_recon(target: str):
+    """Quick reconnaissance scan."""
+    controller = get_redteam_controller()
+    job = await controller.quick_recon(target)
+    return {"success": True, "job": job.to_dict()}
+
+
+@app.post("/api/redteam/counter-attack")
+async def counter_attack(target: str, full: bool = False):
+    """
+    Counter-attack a threat actor.
+    
+    Args:
+        target: IP/hostname of threat
+        full: If True, requires approval for full pentest
+    """
+    controller = get_redteam_controller()
+    job = await controller.counter_attack(target, full=full)
+    return {
+        "success": True,
+        "job": job.to_dict(),
+        "requires_approval": job.requires_approval,
+    }
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8000):
     """Run the web server."""
     import uvicorn

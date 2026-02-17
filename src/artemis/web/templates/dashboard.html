@@ -786,8 +786,8 @@
                     <span>Remediation</span>
                 </div>
                 <div class="nav-item" data-view="pentest">
-                    <span class="nav-icon">*</span>
-                    <span>Pentest</span>
+                    <span class="nav-icon">⚔</span>
+                    <span>Red Team</span>
                 </div>
                 <div class="nav-item" data-view="rules">
                     <span class="nav-icon">=</span>
@@ -1054,105 +1054,145 @@
                     </div>
                 </div>
 
-                <!-- Pentest View -->
+                <!-- Red Team View -->
                 <div class="view" id="view-pentest">
                     <div class="view-header">
-                        <h2 class="view-title">Penetration Testing</h2>
+                        <h2 class="view-title">Red Team Operations</h2>
                         <div class="view-actions">
-                            <button class="btn btn-secondary" onclick="viewPentestHistory()">History</button>
-                            <button class="btn btn-primary" onclick="showPentestModal()">New Pentest</button>
+                            <button class="btn btn-secondary" onclick="loadRedTeamJobs()">Refresh</button>
+                            <button class="btn btn-primary" onclick="showRedTeamModal()">New Operation</button>
                         </div>
                     </div>
                     
-                    <!-- Tools Status -->
-                    <div class="card" style="margin-bottom: 0.875rem;">
-                        <div class="card-header">
-                            <span>Security Tools</span>
-                            <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="refreshToolsStatus()">Refresh</button>
+                    <!-- System Status -->
+                    <div class="stats-row" style="margin-bottom: 0.875rem;">
+                        <div class="stat-card">
+                            <div class="stat-label">Shannon Engine</div>
+                            <div class="stat-value" id="shannonStatus" style="font-size: 0.9rem;">Checking...</div>
                         </div>
-                        <div class="card-body" style="padding: 0.625rem;">
-                            <div id="toolsStatusGrid" style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
-                                <span style="color: var(--text-muted); font-size: 0.8rem;">Loading...</span>
-                            </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Running Jobs</div>
+                            <div class="stat-value accent" id="rtRunningJobs">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Findings</div>
+                            <div class="stat-value warning" id="rtTotalFindings">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Critical</div>
+                            <div class="stat-value danger" id="rtCriticalFindings">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Awaiting Approval</div>
+                            <div class="stat-value" id="rtAwaitingApproval">0</div>
                         </div>
                     </div>
 
-                    <!-- Pentest Status -->
+                    <!-- Quick Actions -->
                     <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">
-                            <span>Pentest Status</span>
-                            <span class="status-badge" id="pentestStatusBadge">
-                                <span class="status-dot"></span>
-                                <span id="pentestStatusText">Idle</span>
-                            </span>
+                            <span>Quick Actions</span>
                         </div>
                         <div class="card-body" style="padding: 0.875rem;">
-                            <div id="pentestIdleState">
-                                <div class="empty-state">
-                                    <div class="empty-icon">[*]</div>
-                                    <div>No pentest running</div>
-                                    <button class="btn btn-primary" style="margin-top: 0.875rem;" onclick="showPentestModal()">Start Pentest</button>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Target (URL or IP)</label>
+                                    <input type="text" class="form-input" id="rtQuickTarget" placeholder="http://192.168.4.1 or 10.0.0.1" style="width: 100%;">
                                 </div>
-                            </div>
-                            <div id="pentestRunningState" style="display: none;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
-                                    <div class="stat-card">
-                                        <div class="stat-label">Target</div>
-                                        <div class="stat-value" id="pentestTarget" style="font-size: 0.85rem;">-</div>
-                                    </div>
-                                    <div class="stat-card">
-                                        <div class="stat-label">Progress</div>
-                                        <div class="stat-value accent" id="pentestProgress">0%</div>
-                                    </div>
-                                    <div class="stat-card">
-                                        <div class="stat-label">Vulnerabilities</div>
-                                        <div class="stat-value danger" id="pentestVulnCount">0</div>
-                                    </div>
-                                </div>
-                                <div style="margin-bottom: 0.875rem;">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.375rem; font-size: 0.85rem;">
-                                        <span id="pentestCurrentAgent">Starting...</span>
-                                        <span id="pentestCurrentTask" style="color: var(--text-muted);"></span>
-                                    </div>
-                                    <div style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
-                                        <div id="pentestProgressBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
-                                    </div>
-                                </div>
-                                <div id="pentestAgentList" style="display: flex; flex-wrap: wrap; gap: 0.375rem;"></div>
-                                <div style="margin-top: 0.875rem; text-align: right;">
-                                    <button class="btn btn-danger" onclick="cancelPentest()">Cancel</button>
+                                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                                    <button class="btn btn-secondary" onclick="quickRecon()">Quick Recon</button>
+                                    <button class="btn btn-primary" onclick="fullAudit()">Full Audit</button>
+                                    <button class="btn btn-danger" onclick="counterAttack()" title="Counter-attack threat actor">Counter</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Vulnerabilities Found -->
+                    <!-- Jobs Requiring Approval -->
+                    <div class="card" style="margin-bottom: 0.875rem;" id="rtApprovalSection" style="display: none;">
+                        <div class="card-header">
+                            <span style="color: var(--warning);">⚠ Jobs Requiring Approval</span>
+                        </div>
+                        <div class="card-body" id="rtApprovalList" style="padding: 0.75rem;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Active Jobs -->
                     <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">
-                            <span>Vulnerabilities Found</span>
-                            <span id="pentestVulnBadge" style="background: var(--danger); color: white; padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.8rem;">0</span>
+                            <span>Active Operations</span>
+                            <span class="live-badge"><span class="live-dot"></span></span>
                         </div>
-                        <div class="card-body" id="pentestVulnList" style="min-height: 140px; max-height: 230px;">
+                        <div class="card-body" id="rtActiveJobs" style="min-height: 100px;">
                             <div class="empty-state">
-                                <div class="empty-icon">[OK]</div>
-                                <div>No vulnerabilities found yet</div>
+                                <div class="empty-icon">⚔</div>
+                                <div>No active operations</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Debug Log -->
+                    <!-- Job History -->
                     <div class="card">
-                        <div class="card-header" style="cursor: pointer;" onclick="toggleDebugPanel()">
-                            <span>Debug Log</span>
-                            <div style="display: flex; align-items: center; gap: 0.625rem;">
-                                <span class="live-badge" id="debugLiveBadge" style="display: none;"><span class="live-dot"></span> Live</span>
-                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="event.stopPropagation(); clearDebugLog()">Clear</button>
-                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="event.stopPropagation(); downloadDebugLog()">Export</button>
-                                <span id="debugToggleIcon" style="font-size: 0.9rem;">[-]</span>
+                        <div class="card-header">
+                            <span>Job History</span>
+                            <select class="form-input" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;" id="rtHistoryFilter" onchange="loadRedTeamJobs()">
+                                <option value="">All Jobs</option>
+                                <option value="completed">Completed</option>
+                                <option value="failed">Failed</option>
+                                <option value="running">Running</option>
+                            </select>
+                        </div>
+                        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                            <table class="data-table" id="rtJobsTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Target</th>
+                                        <th>Mode</th>
+                                        <th>Status</th>
+                                        <th>Findings</th>
+                                        <th>Started</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rtJobsTableBody">
+                                    <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Red Team Modal -->
+                <div id="rtModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h3>Launch Red Team Operation</h3>
+                            <button class="modal-close" onclick="hideRedTeamModal()">&times;</button>
+                        </div>
+                        <div class="modal-body" style="padding: 1rem;">
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem;">Target URL or IP</label>
+                                <input type="text" class="form-input" id="rtModalTarget" placeholder="http://192.168.4.1 or 10.0.0.1" style="width: 100%;">
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem;">Scan Mode</label>
+                                <select class="form-input" id="rtModalMode" style="width: 100%;">
+                                    <option value="recon">Reconnaissance Only</option>
+                                    <option value="vuln_scan">Vulnerability Scan</option>
+                                    <option value="full_audit">Full Audit (with exploitation)</option>
+                                    <option value="counter_recon">Counter-Attack: Recon</option>
+                                    <option value="counter_full">Counter-Attack: Full (requires approval)</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.8rem;">
+                                <div id="rtModeDesc">Quick network reconnaissance - identify services, ports, and basic fingerprinting.</div>
                             </div>
                         </div>
-                        <div class="card-body" id="pentestDebugBody" style="padding: 0;">
-                            <div id="pentestDebugLog" class="debug-log"><span style="color: var(--text-muted);">[Waiting for pentest...]</span></div>
+                        <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
+                            <button class="btn btn-secondary" onclick="hideRedTeamModal()">Cancel</button>
+                            <button class="btn btn-primary" onclick="launchRedTeamJob()">Launch Operation</button>
                         </div>
                     </div>
                 </div>
@@ -2146,6 +2186,361 @@
             } catch (e) {
                 console.error('AI analysis error:', e);
             }
+        }
+        
+        // ========== RED TEAM OPERATIONS ==========
+        
+        const rtModeDescriptions = {
+            'recon': 'Quick network reconnaissance - identify services, ports, and basic fingerprinting.',
+            'vuln_scan': 'Vulnerability scanning - identify potential security weaknesses without exploitation.',
+            'full_audit': 'Full penetration test - includes vulnerability exploitation to prove impact.',
+            'counter_recon': 'Counter-attack reconnaissance - scan threat actor infrastructure (recon only).',
+            'counter_full': 'Full counter-attack - requires approval. Attempts exploitation on threat actor.'
+        };
+        
+        async function loadRedTeamStatus() {
+            try {
+                const resp = await fetch('/api/redteam/status');
+                const data = await resp.json();
+                
+                if (data.enabled) {
+                    document.getElementById('shannonStatus').textContent = data.shannon_available ? '✓ Ready' : '⚠ Check Docker';
+                    document.getElementById('shannonStatus').style.color = data.shannon_available ? 'var(--success)' : 'var(--warning)';
+                    
+                    if (data.stats) {
+                        document.getElementById('rtRunningJobs').textContent = data.stats.running || 0;
+                        document.getElementById('rtTotalFindings').textContent = data.stats.total_findings || 0;
+                        document.getElementById('rtCriticalFindings').textContent = data.stats.critical_findings || 0;
+                        document.getElementById('rtAwaitingApproval').textContent = data.stats.awaiting_approval || 0;
+                    }
+                } else {
+                    document.getElementById('shannonStatus').textContent = '✗ Unavailable';
+                    document.getElementById('shannonStatus').style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                console.error('Failed to load red team status:', e);
+                document.getElementById('shannonStatus').textContent = '✗ Error';
+                document.getElementById('shannonStatus').style.color = 'var(--danger)';
+            }
+        }
+        
+        async function loadRedTeamJobs() {
+            try {
+                const filter = document.getElementById('rtHistoryFilter')?.value || '';
+                const url = filter ? `/api/redteam/jobs?status=${filter}` : '/api/redteam/jobs';
+                const resp = await fetch(url);
+                const data = await resp.json();
+                
+                const tbody = document.getElementById('rtJobsTableBody');
+                const activeContainer = document.getElementById('rtActiveJobs');
+                const approvalSection = document.getElementById('rtApprovalSection');
+                const approvalList = document.getElementById('rtApprovalList');
+                
+                // Clear
+                tbody.innerHTML = '';
+                
+                // Separate jobs
+                const activeJobs = data.jobs.filter(j => j.status === 'running');
+                const approvalJobs = data.jobs.filter(j => j.status === 'awaiting_approval');
+                const otherJobs = data.jobs.filter(j => !['running', 'awaiting_approval'].includes(j.status));
+                
+                // Render active jobs
+                if (activeJobs.length > 0) {
+                    activeContainer.innerHTML = activeJobs.map(j => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 500;">${escapeHtml(j.target)}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">${j.mode} • ${j.id}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="live-badge"><span class="live-dot"></span> Running</span>
+                                <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="cancelJob('${j.id}')">Cancel</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    activeContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚔</div>
+                            <div>No active operations</div>
+                        </div>
+                    `;
+                }
+                
+                // Render approval jobs
+                if (approvalJobs.length > 0) {
+                    approvalSection.style.display = 'block';
+                    approvalList.innerHTML = approvalJobs.map(j => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--warning);">${escapeHtml(j.target)}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">${j.mode} - Requires approval for counter-attack</div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" onclick="approveJob('${j.id}')">Approve</button>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="cancelJob('${j.id}')">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    approvalSection.style.display = 'none';
+                }
+                
+                // Render history table
+                otherJobs.forEach(j => {
+                    const statusClass = {
+                        'completed': 'success',
+                        'failed': 'danger',
+                        'cancelled': 'text-muted'
+                    }[j.status] || '';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-family: monospace; font-size: 0.75rem;">${j.id.slice(0, 12)}</td>
+                        <td>${escapeHtml(j.target)}</td>
+                        <td>${j.mode}</td>
+                        <td style="color: var(--${statusClass});">${j.status}</td>
+                        <td>${j.findings_count || 0} <span style="color: var(--danger);">(${j.critical_count || 0}C)</span></td>
+                        <td style="font-size: 0.8rem;">${formatDate(j.started_at)}</td>
+                        <td>
+                            ${j.report_path ? `<button class="btn btn-secondary" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;" onclick="viewReport('${j.id}')">Report</button>` : '-'}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                if (otherJobs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No jobs found</td></tr>';
+                }
+                
+                // Update stats
+                loadRedTeamStatus();
+                
+            } catch (e) {
+                console.error('Failed to load red team jobs:', e);
+            }
+        }
+        
+        function showRedTeamModal() {
+            document.getElementById('rtModal').style.display = 'flex';
+            document.getElementById('rtModalTarget').focus();
+            updateModeDescription();
+        }
+        
+        function hideRedTeamModal() {
+            document.getElementById('rtModal').style.display = 'none';
+        }
+        
+        function updateModeDescription() {
+            const mode = document.getElementById('rtModalMode').value;
+            document.getElementById('rtModeDesc').textContent = rtModeDescriptions[mode] || '';
+        }
+        
+        // Mode select change handler
+        document.getElementById('rtModalMode')?.addEventListener('change', updateModeDescription);
+        
+        async function launchRedTeamJob() {
+            const target = document.getElementById('rtModalTarget').value.trim();
+            const mode = document.getElementById('rtModalMode').value;
+            
+            if (!target) {
+                alert('Please enter a target URL or IP');
+                return;
+            }
+            
+            try {
+                const resp = await fetch('/api/redteam/launch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, mode })
+                });
+                
+                const data = await resp.json();
+                
+                if (data.success) {
+                    hideRedTeamModal();
+                    if (data.job.requires_approval) {
+                        alert(`Job created but requires approval: ${data.job.id}`);
+                    } else {
+                        alert(`Job launched: ${data.job.id}`);
+                    }
+                    loadRedTeamJobs();
+                } else {
+                    alert('Failed to launch job: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Failed to launch job:', e);
+                alert('Error launching job: ' + e.message);
+            }
+        }
+        
+        async function quickRecon() {
+            const target = document.getElementById('rtQuickTarget').value.trim();
+            if (!target) {
+                alert('Please enter a target');
+                return;
+            }
+            
+            try {
+                const resp = await fetch(`/api/redteam/quick-recon?target=${encodeURIComponent(target)}`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert(`Quick recon started: ${data.job.id}`);
+                    loadRedTeamJobs();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        async function fullAudit() {
+            const target = document.getElementById('rtQuickTarget').value.trim();
+            if (!target) {
+                alert('Please enter a target');
+                return;
+            }
+            
+            if (!confirm(`Launch FULL AUDIT on ${target}? This includes exploitation attempts.`)) {
+                return;
+            }
+            
+            try {
+                const resp = await fetch('/api/redteam/launch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, mode: 'full_audit' })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert(`Full audit started: ${data.job.id}`);
+                    loadRedTeamJobs();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        async function counterAttack() {
+            const target = document.getElementById('rtQuickTarget').value.trim();
+            if (!target) {
+                alert('Please enter a threat actor IP/hostname');
+                return;
+            }
+            
+            const full = confirm(`Counter-attack ${target}?\n\nClick OK for recon-only\nClick Cancel to abort`);
+            
+            try {
+                const resp = await fetch(`/api/redteam/counter-attack?target=${encodeURIComponent(target)}&full=false`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert(`Counter-attack initiated: ${data.job.id}${data.requires_approval ? ' (requires approval)' : ''}`);
+                    loadRedTeamJobs();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        async function approveJob(jobId) {
+            if (!confirm('Approve this counter-attack operation?')) {
+                return;
+            }
+            
+            try {
+                const resp = await fetch(`/api/redteam/jobs/${jobId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ approved_by: 'dashboard_user' })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    alert('Job approved and started');
+                    loadRedTeamJobs();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        async function cancelJob(jobId) {
+            try {
+                const resp = await fetch(`/api/redteam/jobs/${jobId}/cancel`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    loadRedTeamJobs();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        async function viewReport(jobId) {
+            try {
+                const resp = await fetch(`/api/redteam/jobs/${jobId}/report`);
+                const data = await resp.json();
+                
+                if (data.report) {
+                    // Open report in new window
+                    const win = window.open('', '_blank');
+                    win.document.write(`
+                        <html>
+                        <head>
+                            <title>Pentest Report - ${jobId}</title>
+                            <style>
+                                body { font-family: -apple-system, sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+                                pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
+                                code { background: #f5f5f5; padding: 0.2rem 0.4rem; border-radius: 3px; }
+                                h1, h2, h3 { margin-top: 2rem; }
+                            </style>
+                        </head>
+                        <body>
+                            <pre>${escapeHtml(data.report)}</pre>
+                        </body>
+                        </html>
+                    `);
+                } else {
+                    alert('Report not available');
+                }
+            } catch (e) {
+                alert('Error loading report: ' + e.message);
+            }
+        }
+        
+        function formatDate(isoString) {
+            if (!isoString) return '-';
+            const d = new Date(isoString);
+            return d.toLocaleString();
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            })[c]);
+        }
+        
+        // Load red team data when view is shown
+        const origNavHandler = document.querySelectorAll('.nav-item')[0]?.onclick;
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const origClick = item.onclick;
+            item.addEventListener('click', () => {
+                if (item.dataset.view === 'pentest') {
+                    loadRedTeamStatus();
+                    loadRedTeamJobs();
+                }
+            });
+        });
+        
+        // Initial load if starting on red team view
+        if (document.querySelector('.nav-item[data-view="pentest"].active')) {
+            loadRedTeamStatus();
+            loadRedTeamJobs();
         }
     </script>
 </body>
