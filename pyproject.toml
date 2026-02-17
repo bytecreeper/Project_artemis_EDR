@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-artemis"
-version = "1.1.0"
-description = "Project Artemis - AI-powered detection engineering platform"
+version = "2.0.0"
+description = "Project Artemis - AI-powered autonomous cyber defense platform"
 authors = [
     {name = "ByteCreeper", email = "bytecreeper@proton.me"}
 ]
@@ -33,6 +33,23 @@ dependencies = [
     "httpx>=0.25",
     "pydantic>=2.0",
     "markdown>=3.5",
+    # Core monitoring
+    "psutil>=5.9",
+    "netifaces>=0.11",
+    "orjson>=3.9",
+    # Windows integration
+    "pywin32>=306; sys_platform == 'win32'",
+    "wmi>=1.5; sys_platform == 'win32'",
+    # Network analysis
+    "scapy>=2.5",
+    "dnspython>=2.4",
+    "mac-vendor-lookup>=0.1",
+    # Security tools
+    "yara-python>=4.3",
+    "pefile>=2023.2",
+    "watchdog>=3.0",
+    # Async/performance
+    "aiohttp>=3.9",
 ]
 
 [project.optional-dependencies]
@@ -44,12 +61,15 @@ dev = [
 ]
 web = [
     "fastapi>=0.109",
-    "uvicorn>=0.27",
+    "uvicorn[standard]>=0.27",
     "jinja2>=3.1",
+    "python-multipart>=0.0.6",
+    "websockets>=12.0",
 ]
 anthropic = ["anthropic>=0.18"]
 openai = ["openai>=1.0"]
-all = ["project-artemis[anthropic,openai,web,dev]"]
+ollama = ["ollama>=0.1"]
+all = ["project-artemis[anthropic,openai,ollama,web,dev]"]
 
 [project.scripts]
 artemis = "artemis.cli:main"

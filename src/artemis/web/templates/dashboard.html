@@ -1907,13 +1907,160 @@
         function clearConnections() { state.connections = []; updateConnectionsList(); updateConnectionsTable(); }
         function dismissAllThreats() { state.threats = []; updateThreatsList(); }
         function remediateAll() { console.log('Remediate all'); }
-        function startScan() { console.log('Start scan'); }
+        
+        // ========== FILE SCANNER ==========
+        async function startScan() {
+            const scanPath = document.getElementById('scanPath').value || 'C:\\Users';
+            const deepScan = document.getElementById('scanDeep')?.checked || false;
+            const aiAnalysis = document.getElementById('scanAI')?.checked || true;
+            const recursive = document.getElementById('scanRecursive')?.checked || true;
+            
+            const statusEl = document.getElementById('scanStatus');
+            const resultsEl = document.getElementById('scanResults');
+            
+            statusEl.textContent = 'Scanning...';
+            statusEl.style.color = 'var(--warning)';
+            resultsEl.innerHTML = '<div class="empty-state"><div class="empty-icon">[...]</div><div>Scanning files...</div></div>';
+            
+            try {
+                const response = await fetch('/api/scan/files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: scanPath,
+                        deep: deepScan,
+                        ai_analysis: aiAnalysis,
+                        recursive: recursive
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = `Complete - ${data.files_scanned} files, ${data.threats_found} threats`;
+                    statusEl.style.color = data.threats_found > 0 ? 'var(--danger)' : 'var(--success)';
+                    
+                    if (data.results.length === 0) {
+                        resultsEl.innerHTML = '<div class="empty-state"><div class="empty-icon">[OK]</div><div>No files scanned</div></div>';
+                    } else {
+                        const threatResults = data.results.filter(r => r.status !== 'clean');
+                        if (threatResults.length === 0) {
+                            resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">[OK]</div><div>All ${data.files_scanned} files clean</div></div>`;
+                        } else {
+                            resultsEl.innerHTML = threatResults.map(r => `
+                                <div class="threat-item ${r.severity || 'medium'}">
+                                    <div class="threat-header">
+                                        <span class="threat-title">${r.file.split('\\\\').pop()}</span>
+                                        <span class="threat-badge ${r.severity || 'medium'}">${r.status}</span>
+                                    </div>
+                                    <div class="threat-description">${r.details || r.threat_type || ''}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">${r.file}</div>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                    
+                    // Refresh threats list
+                    fetchAllData();
+                } else {
+                    statusEl.textContent = 'Error';
+                    statusEl.style.color = 'var(--danger)';
+                    resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">[!]</div><div>Scan failed: ${data.detail || 'Unknown error'}</div></div>`;
+                }
+            } catch (e) {
+                statusEl.textContent = 'Error';
+                statusEl.style.color = 'var(--danger)';
+                resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">[!]</div><div>Scan failed: ${e.message}</div></div>`;
+            }
+        }
+        
         function viewHistory() { console.log('View history'); }
         function rollbackLast() { console.log('Rollback last'); }
         function viewPentestHistory() { console.log('Pentest history'); }
         function importRules() { console.log('Import rules'); }
         function generateRule() { console.log('Generate rule'); }
-        function saveSettings() { console.log('Save settings'); }
+        
+        // ========== SETTINGS PERSISTENCE ==========
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                // Apply settings to form elements
+                if (document.getElementById('settingsProvider')) {
+                    document.getElementById('settingsProvider').value = settings.provider || 'ollama';
+                }
+                if (document.getElementById('settingsModel')) {
+                    document.getElementById('settingsModel').value = settings.model || 'deepseek-r1:70b';
+                }
+                if (document.getElementById('settingsScanInterval')) {
+                    document.getElementById('settingsScanInterval').value = settings.scan_interval || 60;
+                }
+                if (document.getElementById('settingsNetworkRange')) {
+                    document.getElementById('settingsNetworkRange').value = settings.network_range || '192.168.4.0/24';
+                }
+                if (document.getElementById('settingsAutoQuarantine')) {
+                    document.getElementById('settingsAutoQuarantine').checked = settings.auto_quarantine || false;
+                }
+                if (document.getElementById('settingsDoubleVerify')) {
+                    document.getElementById('settingsDoubleVerify').checked = settings.double_verify !== false;
+                }
+                if (document.getElementById('settingsRequireApproval')) {
+                    document.getElementById('settingsRequireApproval').checked = settings.require_approval !== false;
+                }
+                if (document.getElementById('scanPath')) {
+                    document.getElementById('scanPath').value = settings.scan_path || 'C:\\Users';
+                }
+                
+                // Update model display in header
+                if (document.getElementById('modelName')) {
+                    document.getElementById('modelName').textContent = settings.model || 'deepseek-r1:70b';
+                }
+                
+                console.log('Settings loaded:', settings);
+            } catch (e) {
+                console.error('Failed to load settings:', e);
+            }
+        }
+        
+        async function saveSettings() {
+            const settings = {
+                provider: document.getElementById('settingsProvider')?.value || 'ollama',
+                model: document.getElementById('settingsModel')?.value || 'deepseek-r1:70b',
+                scan_interval: parseInt(document.getElementById('settingsScanInterval')?.value) || 60,
+                network_range: document.getElementById('settingsNetworkRange')?.value || '192.168.4.0/24',
+                auto_quarantine: document.getElementById('settingsAutoQuarantine')?.checked || false,
+                double_verify: document.getElementById('settingsDoubleVerify')?.checked !== false,
+                require_approval: document.getElementById('settingsRequireApproval')?.checked !== false,
+                scan_path: document.getElementById('scanPath')?.value || 'C:\\Users',
+            };
+            
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update header display
+                    if (document.getElementById('modelName')) {
+                        document.getElementById('modelName').textContent = settings.model;
+                    }
+                    
+                    alert('Settings saved successfully!');
+                    console.log('Settings saved:', data.settings);
+                } else {
+                    alert('Failed to save settings');
+                }
+            } catch (e) {
+                console.error('Failed to save settings:', e);
+                alert('Error saving settings: ' + e.message);
+            }
+        }
+        
         function analyzeDevice() { console.log('Analyze device'); }
 
         // Init
@@ -1923,6 +2070,9 @@
             connectWS();
             refreshTopology();
             refreshToolsStatus();
+            
+            // Load persisted settings
+            loadSettings();
             
             // Initial data fetch
             fetchAllData();
@@ -1935,12 +2085,68 @@
             
             window.addEventListener('resize', refreshTopology);
             
-            // Poll for updates every 10 seconds
+            // Poll for updates every 10 seconds (includes traffic stats)
             setInterval(fetchAllData, 10000);
             
             // Poll connections more frequently
             setInterval(fetchConnections, 5000);
+            
+            // Run AI analysis periodically (every 60 seconds)
+            setInterval(runAutoAIAnalysis, 60000);
         });
+        
+        // ========== AUTO AI ANALYSIS ==========
+        async function runAutoAIAnalysis() {
+            // Only run if we have connections and devices
+            if (state.connections.length === 0 && state.devices.length === 0) {
+                return;
+            }
+            
+            try {
+                // Analyze unusual connection patterns
+                const suspiciousConns = state.connections.filter(conn => {
+                    // Check for unusual ports
+                    const remote = conn.remote || '';
+                    const port = remote.split(':').pop();
+                    const suspiciousPorts = ['4444', '5555', '6666', '1337', '31337', '8888', '9999'];
+                    return suspiciousPorts.includes(port);
+                });
+                
+                if (suspiciousConns.length > 0) {
+                    // Add to AI analysis feed
+                    const aiList = document.getElementById('aiList');
+                    const analysisHtml = `
+                        <div class="ai-panel" style="margin: 0.375rem;">
+                            <div class="ai-header">Suspicious Connection Detected</div>
+                            <div class="ai-response">Found ${suspiciousConns.length} connection(s) to unusual ports. Processes: ${suspiciousConns.map(c => c.process || 'unknown').join(', ')}</div>
+                        </div>
+                    `;
+                    
+                    if (aiList.querySelector('.empty-state')) {
+                        aiList.innerHTML = '';
+                    }
+                    aiList.insertAdjacentHTML('afterbegin', analysisHtml);
+                    
+                    document.getElementById('statAnalyses').textContent = parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
+                }
+                
+                // Check for new devices (potential rogue devices)
+                const recentDevices = state.devices.filter(d => {
+                    // Devices seen in last 5 minutes
+                    const lastSeen = new Date(d.last_seen);
+                    const now = new Date();
+                    return (now - lastSeen) < 5 * 60 * 1000;
+                });
+                
+                if (recentDevices.length > 5) {
+                    // Many new devices - possible network scan
+                    console.log('AI Analysis: Multiple new devices detected');
+                }
+                
+            } catch (e) {
+                console.error('AI analysis error:', e);
+            }
+        }
     </script>
 </body>
 </html>

@@ -1,11 +1,12 @@
 """FastAPI web application for Project Artemis."""
 
 import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -13,6 +14,7 @@ from pydantic import BaseModel
 from artemis.core import Artemis
 from artemis.models import RuleFormat, Severity
 from artemis.web.realtime import router as realtime_router, state as security_state
+from artemis.web.monitor import get_monitor, shutdown_monitor, NetworkMonitor
 
 
 # Get paths
@@ -20,11 +22,43 @@ WEB_DIR = Path(__file__).parent
 STATIC_DIR = WEB_DIR / "static"
 TEMPLATES_DIR = WEB_DIR / "templates"
 
-# Create FastAPI app
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler for startup/shutdown."""
+    # Startup: Initialize the network monitor
+    settings = load_settings()
+    network_range = settings.get("network_range", "192.168.4.0/24")
+    monitor = get_monitor(network_range)
+    
+    # Register callbacks to update security_state
+    async def on_threat(threat):
+        await security_state.add_threat({
+            "id": threat.id,
+            "title": threat.title,
+            "description": threat.description,
+            "severity": threat.severity,
+            "source": threat.source_ip,
+            "type": threat.category,
+        })
+    
+    monitor.on_threat(on_threat)
+    print(f"🛡️ Artemis Monitor started - watching {network_range}")
+    
+    yield
+    
+    # Shutdown
+    shutdown_monitor()
+    print("🛡️ Artemis Monitor stopped")
+
+
+# Create FastAPI app with ORJSON for fast serialization
 app = FastAPI(
     title="Project Artemis",
     description="Autonomous AI-powered security operations platform",
-    version="1.0.0",
+    version="2.0.0",
+    default_response_class=ORJSONResponse,
+    lifespan=lifespan,
 )
 
 # Include real-time WebSocket routes
@@ -457,8 +491,10 @@ async def get_pentest_tools():
 
 @app.get("/api/devices")
 async def get_devices():
-    """Get all discovered devices."""
-    return {"devices": list(security_state.devices.values())}
+    """Get all discovered devices from monitor."""
+    monitor = get_monitor()
+    devices = monitor.get_devices()
+    return {"devices": devices}
 
 
 @app.get("/api/devices/{device_id}")
@@ -472,75 +508,28 @@ async def get_device(device_id: str):
 
 @app.get("/api/connections")
 async def get_connections():
-    """Get active network connections."""
-    import subprocess
-    import re
-    
-    connections = []
-    
-    try:
-        # Get netstat output
-        result = subprocess.run(
-            ["netstat", "-ano"],
-            capture_output=True, text=True, timeout=10
-        )
-        
-        for line in result.stdout.split("\n"):
-            # Parse TCP/UDP lines
-            match = re.match(r'\s*(TCP|UDP)\s+(\S+)\s+(\S+)\s+(\S+)?\s*(\d+)?', line)
-            if match:
-                protocol = match.group(1)
-                local = match.group(2)
-                remote = match.group(3)
-                state = match.group(4) or ""
-                pid = match.group(5) or ""
-                
-                # Skip listening on localhost
-                if remote == "*:*" or remote == "0.0.0.0:0":
-                    continue
-                if local.startswith("127.") or local.startswith("[::1]"):
-                    continue
-                
-                # Get process name
-                process_name = "-"
-                if pid:
-                    try:
-                        proc_result = subprocess.run(
-                            ["powershell", "-Command", f"(Get-Process -Id {pid} -ErrorAction SilentlyContinue).ProcessName"],
-                            capture_output=True, text=True, timeout=2
-                        )
-                        process_name = proc_result.stdout.strip() or pid
-                    except:
-                        process_name = pid
-                
-                connections.append({
-                    "protocol": protocol,
-                    "local": local,
-                    "remote": remote,
-                    "state": state,
-                    "pid": pid,
-                    "process": process_name,
-                })
-        
-        # Update state
-        security_state.connections = connections[:100]
-        
-    except Exception as e:
-        print(f"Connection scan error: {e}")
-    
-    return {"connections": connections[:100]}
+    """Get active network connections using high-performance monitor."""
+    monitor = get_monitor()
+    connections = monitor.get_connections_fast()
+    security_state.connections = connections
+    return {"connections": connections}
 
 
 @app.get("/api/threats")
 async def get_threats():
-    """Get recent threats."""
-    return {"threats": security_state.threats}
+    """Get recent threats from monitor."""
+    monitor = get_monitor()
+    threats = monitor.get_threats()
+    return {"threats": threats}
 
 
 @app.get("/api/traffic")
 async def get_traffic():
-    """Get traffic statistics."""
-    return security_state.traffic_stats
+    """Get traffic statistics using high-performance monitor."""
+    monitor = get_monitor()
+    stats = monitor.get_traffic_stats()
+    await security_state.update_traffic(stats)
+    return stats
 
 
 @app.get("/api/topology")
@@ -557,127 +546,254 @@ async def get_full_state():
 
 @app.post("/api/scan/network")
 async def scan_network():
-    """Trigger a network scan to discover devices."""
-    import subprocess
-    import re
-    from datetime import datetime, timezone
+    """Trigger a network scan using high-performance monitor."""
+    settings = load_settings()
+    network_range = settings.get("network_range", "192.168.4.0/24")
     
-    devices = []
-    seen_ips = set()
-    network_range = "192.168.4.0/24"  # Default
+    monitor = get_monitor(network_range)
+    devices = monitor.scan_arp_table()
     
-    try:
-        # Run ARP scan - gets all cached entries
-        arp_result = subprocess.run(
-            ["arp", "-a"],
-            capture_output=True, text=True, timeout=30
-        )
-        
-        # Parse all ARP entries
-        current_interface = ""
-        for line in arp_result.stdout.split("\n"):
-            # Check for interface line
-            if "Interface:" in line:
-                iface_match = re.search(r'Interface:\s+(\d+\.\d+\.\d+\.\d+)', line)
-                if iface_match:
-                    current_interface = iface_match.group(1)
-                    # Use 192.168.x.x network if found
-                    if current_interface.startswith("192.168"):
-                        network_range = ".".join(current_interface.split(".")[:3]) + ".0/24"
-                continue
-            
-            # Match IP and MAC
-            match = re.search(r'(\d+\.\d+\.\d+\.\d+)\s+([0-9a-fA-F-]{17})\s+(\w+)', line)
-            if match:
-                ip = match.group(1)
-                mac = match.group(2).replace("-", ":").lower()
-                entry_type = match.group(3)
-                
-                # Skip broadcast and multicast
-                if ip.endswith(".255") or ip.startswith("224.") or ip.startswith("239."):
-                    continue
-                
-                if ip not in seen_ips:
-                    seen_ips.add(ip)
-                    
-                    # Determine device type from MAC prefix
-                    mac_prefix = mac[:8].upper().replace(":", "-")
-                    device_type = "desktop"
-                    vendor = ""
-                    
-                    # Common vendor prefixes (expanded)
-                    vendor_map = {
-                        "00-50-56": ("server", "VMware"),
-                        "00-0C-29": ("server", "VMware"),
-                        "00-15-5D": ("server", "Hyper-V"),
-                        "00-1C-42": ("server", "Parallels"),
-                        "AC-DE-48": ("iot", "Raspberry Pi"),
-                        "B8-27-EB": ("iot", "Raspberry Pi"),
-                        "DC-A6-32": ("iot", "Raspberry Pi"),
-                        "E4-5F-01": ("iot", "Raspberry Pi"),
-                        "00-1A-79": ("router", "Ubiquiti"),
-                        "78-8A-20": ("router", "Ubiquiti"),
-                        "F0-9F-C2": ("router", "Ubiquiti"),
-                        "00-18-0A": ("router", "Cisco"),
-                        "00-1B-54": ("router", "Cisco"),
-                        "18-E8-29": ("router", "Netgear"),
-                        "A0-63-91": ("router", "Netgear"),
-                        "F8-FF-C2": ("mobile", "Apple"),
-                        "A4-83-E7": ("mobile", "Apple"),
-                        "3C-06-30": ("mobile", "Apple"),
-                        "70-56-81": ("mobile", "Apple"),
-                        "A4-C3-F0": ("mobile", "Intel"),
-                        "5C-E0-C5": ("mobile", "Samsung"),
-                        "CC-46-D6": ("desktop", "Google"),
-                        "74-D4-35": ("desktop", "Giga-Byte"),
-                        "04-D9-F5": ("desktop", "Asus"),
-                        "00-25-22": ("desktop", "ASRock"),
-                        "74-D0-2B": ("desktop", "ASUSTek"),
-                        "D8-BB-C1": ("desktop", "Micro-Star"),
-                    }
-                    
-                    for prefix, (dtype, vend) in vendor_map.items():
-                        if mac_prefix.startswith(prefix):
-                            device_type = dtype
-                            vendor = vend
-                            break
-                    
-                    device = {
-                        "ip": ip,
-                        "mac": mac,
-                        "hostname": ip,
-                        "type": device_type,
-                        "vendor": vendor,
-                        "status": "online",
-                        "last_seen": datetime.now(timezone.utc).isoformat(),
-                    }
-                    devices.append(device)
-                    
-                    # Update security state
-                    await security_state.update_device(ip, device)
-        
-        # Sort by IP
-        devices.sort(key=lambda d: [int(x) for x in d["ip"].split(".")])
-        
-        return {
-            "success": True,
-            "devices_found": len(devices),
-            "network_range": network_range,
-            "devices": devices,
-        }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "devices": [],
-        }
+    # Update security state for each device
+    for device in devices:
+        await security_state.update_device(device["ip"], device)
+    
+    return {
+        "success": True,
+        "devices_found": len(devices),
+        "network_range": network_range,
+        "devices": devices,
+    }
 
 
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.1.2"}
+    return {"status": "ok", "version": "1.1.5"}
+
+
+# ============================================================================
+# Settings Persistence
+# ============================================================================
+
+import json as json_module
+from pathlib import Path
+
+SETTINGS_FILE = Path(__file__).parent.parent.parent.parent / "settings.json"
+
+DEFAULT_SETTINGS = {
+    "provider": "ollama",
+    "model": "deepseek-r1:70b",
+    "scan_interval": 60,
+    "network_range": "192.168.4.0/24",
+    "auto_quarantine": False,
+    "double_verify": True,
+    "require_approval": True,
+    "scan_path": "C:\\Users",
+}
+
+
+def load_settings() -> dict:
+    """Load settings from file or return defaults."""
+    try:
+        if SETTINGS_FILE.exists():
+            return json_module.loads(SETTINGS_FILE.read_text())
+    except Exception as e:
+        print(f"Failed to load settings: {e}")
+    return DEFAULT_SETTINGS.copy()
+
+
+def save_settings_to_file(settings: dict) -> bool:
+    """Save settings to file."""
+    try:
+        SETTINGS_FILE.write_text(json_module.dumps(settings, indent=2))
+        return True
+    except Exception as e:
+        print(f"Failed to save settings: {e}")
+        return False
+
+
+class SettingsRequest(BaseModel):
+    """Settings update request."""
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    scan_interval: Optional[int] = None
+    network_range: Optional[str] = None
+    auto_quarantine: Optional[bool] = None
+    double_verify: Optional[bool] = None
+    require_approval: Optional[bool] = None
+    scan_path: Optional[str] = None
+
+
+@app.get("/api/settings")
+async def get_settings():
+    """Get current settings."""
+    return load_settings()
+
+
+@app.post("/api/settings")
+async def update_settings(req: SettingsRequest):
+    """Update and persist settings."""
+    current = load_settings()
+    
+    # Update only provided fields
+    if req.provider is not None:
+        current["provider"] = req.provider
+    if req.model is not None:
+        current["model"] = req.model
+    if req.scan_interval is not None:
+        current["scan_interval"] = req.scan_interval
+    if req.network_range is not None:
+        current["network_range"] = req.network_range
+    if req.auto_quarantine is not None:
+        current["auto_quarantine"] = req.auto_quarantine
+    if req.double_verify is not None:
+        current["double_verify"] = req.double_verify
+    if req.require_approval is not None:
+        current["require_approval"] = req.require_approval
+    if req.scan_path is not None:
+        current["scan_path"] = req.scan_path
+    
+    if save_settings_to_file(current):
+        return {"success": True, "settings": current}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save settings")
+
+
+# ============================================================================
+# File Scanner
+# ============================================================================
+
+class ScanRequest(BaseModel):
+    """File scan request."""
+    path: str
+    deep: bool = False
+    ai_analysis: bool = True
+    recursive: bool = True
+
+
+class ScanResult(BaseModel):
+    """Scan result item."""
+    file: str
+    status: str
+    threat_type: Optional[str] = None
+    severity: Optional[str] = None
+    details: Optional[str] = None
+
+
+_scan_results: list[dict] = []
+_scan_running: bool = False
+
+
+@app.post("/api/scan/files")
+async def start_file_scan(req: ScanRequest):
+    """Start a file scan in the specified directory."""
+    global _scan_running, _scan_results
+    
+    import os
+    import hashlib
+    
+    scan_path = Path(req.path)
+    
+    if not scan_path.exists():
+        raise HTTPException(status_code=400, detail=f"Path does not exist: {req.path}")
+    
+    _scan_running = True
+    _scan_results = []
+    
+    # Known suspicious patterns (basic heuristics)
+    suspicious_extensions = {'.exe', '.dll', '.bat', '.cmd', '.ps1', '.vbs', '.js', '.scr', '.pif', '.com'}
+    suspicious_names = {'mimikatz', 'cobaltstrike', 'metasploit', 'nc.exe', 'netcat', 'psexec', 'payload', 'backdoor', 'trojan', 'keylogger'}
+    
+    files_scanned = 0
+    threats_found = 0
+    
+    try:
+        # Scan files
+        if scan_path.is_file():
+            files_to_scan = [scan_path]
+        elif req.recursive:
+            files_to_scan = list(scan_path.rglob("*"))[:1000]  # Limit to 1000 files
+        else:
+            files_to_scan = list(scan_path.glob("*"))
+        
+        for file_path in files_to_scan:
+            if not file_path.is_file():
+                continue
+                
+            files_scanned += 1
+            file_name = file_path.name.lower()
+            file_ext = file_path.suffix.lower()
+            
+            result = {
+                "file": str(file_path),
+                "status": "clean",
+                "threat_type": None,
+                "severity": None,
+                "details": None,
+            }
+            
+            # Check for suspicious extensions in unusual locations
+            if file_ext in suspicious_extensions:
+                # Check if in temp or download folders
+                path_lower = str(file_path).lower()
+                if any(x in path_lower for x in ['temp', 'tmp', 'download', 'appdata\\local', 'appdata\\roaming']):
+                    result["status"] = "suspicious"
+                    result["threat_type"] = "suspicious_location"
+                    result["severity"] = "low"
+                    result["details"] = f"Executable in suspicious location"
+            
+            # Check for known malicious tool names
+            for sus_name in suspicious_names:
+                if sus_name in file_name:
+                    result["status"] = "malicious"
+                    result["threat_type"] = "known_malicious"
+                    result["severity"] = "high"
+                    result["details"] = f"Matches known malicious tool pattern: {sus_name}"
+                    threats_found += 1
+                    
+                    # Add to threats
+                    await security_state.add_threat({
+                        "title": f"Malicious file detected: {file_path.name}",
+                        "description": result["details"],
+                        "severity": "high",
+                        "source": str(file_path),
+                        "type": "malware",
+                    })
+                    break
+            
+            # Check for double extensions (e.g., document.pdf.exe)
+            parts = file_name.rsplit('.', 2)
+            if len(parts) > 2 and f".{parts[-1]}" in suspicious_extensions:
+                result["status"] = "suspicious"
+                result["threat_type"] = "double_extension"
+                result["severity"] = "medium"
+                result["details"] = "File has suspicious double extension"
+                threats_found += 1
+            
+            _scan_results.append(result)
+        
+        return {
+            "success": True,
+            "files_scanned": files_scanned,
+            "threats_found": threats_found,
+            "results": _scan_results[:100],  # Return first 100
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        _scan_running = False
+
+
+@app.get("/api/scan/results")
+async def get_scan_results():
+    """Get current scan results."""
+    return {
+        "running": _scan_running,
+        "results": _scan_results,
+        "total": len(_scan_results),
+        "threats": sum(1 for r in _scan_results if r.get("status") in ["suspicious", "malicious"]),
+    }
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):
