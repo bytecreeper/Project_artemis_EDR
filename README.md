@@ -30,6 +30,73 @@ A comprehensive cybersecurity toolkit combining detection engineering, endpoint 
 
 ---
 
+## 📸 Screenshots
+
+<details>
+<summary><b>🖥️ Control Center</b> — Main dashboard overview</summary>
+<p align="center">
+  <img src="assets/screenshots/Control_center.png" alt="Control Center" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>🔍 EDR Module</b> — Endpoint detection & response</summary>
+<p align="center">
+  <img src="assets/screenshots/EDR.png" alt="EDR Module" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>🌐 Network Traffic</b> — Real-time connection monitoring</summary>
+<p align="center">
+  <img src="assets/screenshots/Network_Traffic.png" alt="Network Traffic" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>💻 Endpoints</b> — Device discovery and management</summary>
+<p align="center">
+  <img src="assets/screenshots/Endpoints.png" alt="Endpoints" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>⚠️ Threat Detection</b> — Active threat monitoring</summary>
+<p align="center">
+  <img src="assets/screenshots/Threat_Detection.png" alt="Threat Detection" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>📋 Detection Ruleset</b> — AI-generated security rules</summary>
+<p align="center">
+  <img src="assets/screenshots/Detection_Rulset.png" alt="Detection Ruleset" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>📁 File Scanner</b> — Malware and file analysis</summary>
+<p align="center">
+  <img src="assets/screenshots/File_Scanner.png" alt="File Scanner" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>🛠️ Remediation Center</b> — Response actions and quarantine</summary>
+<p align="center">
+  <img src="assets/screenshots/Remediation_Center.png" alt="Remediation Center" width="800">
+</p>
+</details>
+
+<details>
+<summary><b>🔴 Red Team</b> — Penetration testing module</summary>
+<p align="center">
+  <img src="assets/screenshots/Red_Team.png" alt="Red Team" width="800">
+</p>
+</details>
+
+---
+
 ## ✨ Features
 
 ### 🎯 Detection Engineering
