@@ -48,7 +48,7 @@
         .app { display: flex; height: 100vh; }
         
         .sidebar {
-            width: 220px;
+            width: 200px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             display: flex;
@@ -57,31 +57,32 @@
         }
 
         .sidebar-header {
-            padding: 1.5rem 1rem;
+            padding: 1.5rem 0.75rem 1.25rem;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 60%, transparent 100%);
         }
 
         .logo {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.25rem;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 140px;
+            height: 140px;
             object-fit: contain;
-            filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.3));
+            filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 60px rgba(245, 158, 11, 0.25));
         }
 
         .logo-text {
             font-weight: 700;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             color: var(--accent);
-            letter-spacing: 0.15em;
-            text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+            margin-top: -0.25rem;
         }
 
         .nav-section {
@@ -1735,28 +1736,35 @@
 
         // Network scanning
         async function scanNetwork() {
-            const btn = event?.target;
+            // Find the button that was clicked
+            const btns = document.querySelectorAll('button');
+            let btn = null;
+            btns.forEach(b => { if (b.textContent.includes('Scan')) btn = b; });
+            
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = 'Scanning...';
             }
             
+            console.log('Starting network scan...');
+            
             try {
                 const response = await fetch('/api/scan/network', { method: 'POST' });
                 const data = await response.json();
+                console.log('Scan result:', data);
                 
                 if (data.success) {
                     state.devices = data.devices || [];
                     updateDevicesList();
+                    updateDevicesGrid();
                     refreshTopology();
-                    
-                    // Show result
-                    alert(`Found ${data.devices_found} devices on ${data.network_range}`);
+                    document.getElementById('statDevices').textContent = state.devices.length;
+                    console.log(`Found ${data.devices_found} devices`);
                 } else {
-                    alert('Scan failed: ' + (data.error || 'Unknown error'));
+                    console.error('Scan failed:', data.error);
                 }
             } catch (e) {
-                alert('Scan failed: ' + e.message);
+                console.error('Scan error:', e);
             } finally {
                 if (btn) {
                     btn.disabled = false;
@@ -1764,9 +1772,139 @@
                 }
             }
         }
-        function exportDevices() { console.log('Export devices'); }
-        function exportTraffic() { console.log('Export traffic'); }
-        function clearConnections() { state.connections = []; updateConnectionsList(); }
+
+        // Update the devices grid (Endpoints view)
+        function updateDevicesGrid() {
+            const grid = document.getElementById('devicesGrid');
+            if (!grid) return;
+            
+            if (state.devices.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><div class="empty-icon">[#]</div><div>No endpoints discovered yet</div><button class="btn btn-primary" style="margin-top: 1rem;" onclick="scanNetwork()">Scan Network</button></div>';
+                return;
+            }
+            
+            grid.innerHTML = state.devices.map(device => `
+                <div class="device-card" onclick="selectDevice('${device.ip}')">
+                    <div class="device-header">
+                        <span class="device-name">${device.hostname || device.ip}</span>
+                        <span class="device-type-badge ${device.type || ''}">${device.type || 'unknown'}</span>
+                    </div>
+                    <div class="device-ip" style="margin: 0.5rem 0;">${device.ip}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        <div>MAC: ${device.mac || '-'}</div>
+                        <div>Vendor: ${device.vendor || 'Unknown'}</div>
+                        <div>Status: <span style="color: var(--success);">${device.status || 'online'}</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update network connections table
+        function updateConnectionsTable() {
+            const tbody = document.getElementById('connectionsTableBody');
+            if (!tbody) return;
+            
+            if (state.connections.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No active connections</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = state.connections.slice(0, 50).map(conn => `
+                <tr>
+                    <td style="color: var(--accent);">${conn.process || conn.name || '-'}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${conn.local || conn.local_addr || '-'}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${conn.remote || conn.remote_addr || '-'}</td>
+                    <td><span class="conn-state ${(conn.state || '').toLowerCase()}">${conn.state || conn.status || '-'}</span></td>
+                    <td>${conn.protocol || conn.type || 'TCP'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Fetch network connections
+        async function fetchConnections() {
+            try {
+                const response = await fetch('/api/connections');
+                const data = await response.json();
+                state.connections = data.connections || [];
+                updateConnectionsList();
+                updateConnectionsTable();
+                document.getElementById('statConnections').textContent = state.connections.length;
+            } catch (e) {
+                console.error('Failed to fetch connections:', e);
+            }
+        }
+
+        // Fetch all data
+        async function fetchAllData() {
+            try {
+                const [devicesRes, connectionsRes, threatsRes, trafficRes] = await Promise.all([
+                    fetch('/api/devices'),
+                    fetch('/api/connections'),
+                    fetch('/api/threats'),
+                    fetch('/api/traffic')
+                ]);
+                
+                const devices = await devicesRes.json();
+                const connections = await connectionsRes.json();
+                const threats = await threatsRes.json();
+                const traffic = await trafficRes.json();
+                
+                state.devices = devices.devices || [];
+                state.connections = connections.connections || [];
+                state.threats = threats.threats || [];
+                
+                updateDevicesList();
+                updateDevicesGrid();
+                updateConnectionsList();
+                updateConnectionsTable();
+                updateThreatsList();
+                refreshTopology();
+                
+                // Update stats
+                document.getElementById('statDevices').textContent = state.devices.length;
+                document.getElementById('statConnections').textContent = state.connections.length;
+                document.getElementById('statThreats').textContent = state.threats.length;
+                
+                if (traffic.bytes_in !== undefined) {
+                    document.getElementById('statTrafficIn').textContent = formatBytes(traffic.bytes_in);
+                    document.getElementById('statTrafficOut').textContent = formatBytes(traffic.bytes_out);
+                }
+            } catch (e) {
+                console.error('Failed to fetch data:', e);
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function exportDevices() {
+            const csv = 'IP,MAC,Hostname,Type,Vendor,Status\n' + 
+                state.devices.map(d => `${d.ip},${d.mac},${d.hostname},${d.type},${d.vendor},${d.status}`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'endpoints.csv';
+            a.click();
+        }
+        
+        function exportTraffic() {
+            const csv = 'Process,Local,Remote,State,Protocol\n' + 
+                state.connections.map(c => `${c.process || c.name},${c.local || c.local_addr},${c.remote || c.remote_addr},${c.state},${c.protocol || 'TCP'}`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'connections.csv';
+            a.click();
+        }
+        
+        function clearConnections() { state.connections = []; updateConnectionsList(); updateConnectionsTable(); }
         function dismissAllThreats() { state.threats = []; updateThreatsList(); }
         function remediateAll() { console.log('Remediate all'); }
         function startScan() { console.log('Start scan'); }
@@ -1780,22 +1918,28 @@
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('Artemis Dashboard initializing...');
+            
             connectWS();
             refreshTopology();
             refreshToolsStatus();
             
+            // Initial data fetch
+            fetchAllData();
+            
+            // Auto-scan network on first load
+            setTimeout(() => {
+                console.log('Auto-scanning network...');
+                scanNetwork();
+            }, 1000);
+            
             window.addEventListener('resize', refreshTopology);
             
-            // Poll for updates
-            setInterval(async () => {
-                try {
-                    const res = await fetch('/api/devices');
-                    const data = await res.json();
-                    state.devices = data.devices || [];
-                    updateDevicesList();
-                    refreshTopology();
-                } catch (e) {}
-            }, 30000);
+            // Poll for updates every 10 seconds
+            setInterval(fetchAllData, 10000);
+            
+            // Poll connections more frequently
+            setInterval(fetchConnections, 5000);
         });
     </script>
 </body>

@@ -473,7 +473,62 @@ async def get_device(device_id: str):
 @app.get("/api/connections")
 async def get_connections():
     """Get active network connections."""
-    return {"connections": security_state.connections[-100:]}
+    import subprocess
+    import re
+    
+    connections = []
+    
+    try:
+        # Get netstat output
+        result = subprocess.run(
+            ["netstat", "-ano"],
+            capture_output=True, text=True, timeout=10
+        )
+        
+        for line in result.stdout.split("\n"):
+            # Parse TCP/UDP lines
+            match = re.match(r'\s*(TCP|UDP)\s+(\S+)\s+(\S+)\s+(\S+)?\s*(\d+)?', line)
+            if match:
+                protocol = match.group(1)
+                local = match.group(2)
+                remote = match.group(3)
+                state = match.group(4) or ""
+                pid = match.group(5) or ""
+                
+                # Skip listening on localhost
+                if remote == "*:*" or remote == "0.0.0.0:0":
+                    continue
+                if local.startswith("127.") or local.startswith("[::1]"):
+                    continue
+                
+                # Get process name
+                process_name = "-"
+                if pid:
+                    try:
+                        proc_result = subprocess.run(
+                            ["powershell", "-Command", f"(Get-Process -Id {pid} -ErrorAction SilentlyContinue).ProcessName"],
+                            capture_output=True, text=True, timeout=2
+                        )
+                        process_name = proc_result.stdout.strip() or pid
+                    except:
+                        process_name = pid
+                
+                connections.append({
+                    "protocol": protocol,
+                    "local": local,
+                    "remote": remote,
+                    "state": state,
+                    "pid": pid,
+                    "process": process_name,
+                })
+        
+        # Update state
+        security_state.connections = connections[:100]
+        
+    except Exception as e:
+        print(f"Connection scan error: {e}")
+    
+    return {"connections": connections[:100]}
 
 
 @app.get("/api/threats")
