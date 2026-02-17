@@ -1,11 +1,14 @@
 """FastAPI web application for Project Artemis."""
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
+
+logger = logging.getLogger("artemis.web")
 from fastapi.responses import HTMLResponse, JSONResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
