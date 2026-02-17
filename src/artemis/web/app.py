@@ -1252,18 +1252,6 @@ async def get_processes():
     }
 
 
-@app.get("/api/edr/processes/{pid}")
-async def get_process_detail(pid: int):
-    """Get detailed information about a specific process."""
-    monitor = get_process_monitor()
-    info = monitor.analyze_process(pid)
-    
-    if info is None:
-        raise HTTPException(status_code=404, detail="Process not found")
-    
-    return info
-
-
 @app.get("/api/edr/processes/events")
 async def get_process_events(
     limit: int = 100,
@@ -1276,6 +1264,18 @@ async def get_process_events(
         "events": events,
         "total": len(events),
     }
+
+
+@app.get("/api/edr/processes/{pid}")
+async def get_process_detail(pid: int):
+    """Get detailed information about a specific process."""
+    monitor = get_process_monitor()
+    info = monitor.analyze_process(pid)
+    
+    if info is None:
+        raise HTTPException(status_code=404, detail="Process not found")
+    
+    return info
 
 
 @app.get("/api/edr/processes/alerts")
