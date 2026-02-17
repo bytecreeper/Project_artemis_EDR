@@ -451,10 +451,59 @@ async def get_pentest_tools():
     }
 
 
+# ============================================================================
+# Device & Network API Endpoints
+# ============================================================================
+
+@app.get("/api/devices")
+async def get_devices():
+    """Get all discovered devices."""
+    return {"devices": list(security_state.devices.values())}
+
+
+@app.get("/api/devices/{device_id}")
+async def get_device(device_id: str):
+    """Get specific device details."""
+    device = security_state.devices.get(device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    return device
+
+
+@app.get("/api/connections")
+async def get_connections():
+    """Get active network connections."""
+    return {"connections": security_state.connections[-100:]}
+
+
+@app.get("/api/threats")
+async def get_threats():
+    """Get recent threats."""
+    return {"threats": security_state.threats}
+
+
+@app.get("/api/traffic")
+async def get_traffic():
+    """Get traffic statistics."""
+    return security_state.traffic_stats
+
+
+@app.get("/api/topology")
+async def get_topology():
+    """Get network topology."""
+    return security_state.network_topology
+
+
+@app.get("/api/state")
+async def get_full_state():
+    """Get complete security state."""
+    return security_state.get_full_state()
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.1.0"}
+    return {"status": "ok", "version": "1.1.1"}
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):

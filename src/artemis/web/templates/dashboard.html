@@ -8,25 +8,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-tertiary: #1a1a24;
-            --bg-card: #16161e;
-            --bg-hover: #1e1e2a;
-            --border: #2a2a3a;
-            --border-light: #3a3a4a;
-            --text-primary: #e4e4e7;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent: #22d3ee;
-            --accent-dim: #0891b2;
+            /* Artemis Amber/Black Theme */
+            --bg-primary: #050505;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --bg-card: #0d0d0d;
+            --bg-hover: #151515;
+            --border: #1a1a1a;
+            --border-light: #252525;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            
+            /* Amber/Orange Accent */
+            --accent: #f59e0b;
+            --accent-bright: #fbbf24;
+            --accent-dim: #d97706;
+            --accent-glow: rgba(245, 158, 11, 0.15);
+            
+            /* Status Colors */
             --success: #22c55e;
             --warning: #f59e0b;
             --danger: #ef4444;
             --critical: #dc2626;
-            --purple: #a855f7;
-            --blue: #3b82f6;
-            --pink: #ec4899;
+            --info: #3b82f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,7 +48,7 @@
         .app { display: flex; height: 100vh; }
         
         .sidebar {
-            width: 240px;
+            width: 220px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border);
             display: flex;
@@ -52,7 +57,7 @@
         }
 
         .sidebar-header {
-            padding: 1rem;
+            padding: 1.25rem 1rem;
             border-bottom: 1px solid var(--border);
         }
 
@@ -60,23 +65,23 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            font-weight: 700;
-            font-size: 1.1rem;
         }
 
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--purple));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent);
+            letter-spacing: 0.05em;
         }
 
         .nav-section {
-            padding: 1rem 0.5rem;
+            padding: 0.75rem 0.5rem;
             flex: 1;
         }
 
@@ -84,19 +89,33 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            border-radius: 6px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.15s;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.125rem;
             user-select: none;
+            font-size: 0.9rem;
         }
 
-        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .nav-item.active { background: var(--accent); color: #000; font-weight: 500; }
+        .nav-item:hover { 
+            background: var(--bg-hover); 
+            color: var(--text-primary); 
+        }
+        
+        .nav-item.active { 
+            background: var(--accent); 
+            color: #000; 
+            font-weight: 600; 
+        }
 
-        .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+        .nav-icon { 
+            width: 20px; 
+            text-align: center; 
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
 
         .main-content {
             flex: 1;
@@ -107,7 +126,7 @@
 
         /* Header */
         .header {
-            padding: 1rem 1.5rem;
+            padding: 0.875rem 1.5rem;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             display: flex;
@@ -115,22 +134,27 @@
             align-items: center;
         }
 
-        .header-title { font-size: 1.25rem; font-weight: 600; }
+        .header-title { 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            color: var(--text-primary);
+        }
 
         .header-status {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.25rem;
         }
 
         .status-badge {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            padding: 0.4rem 0.875rem;
             background: var(--bg-tertiary);
-            border-radius: 20px;
-            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
 
         .status-dot {
@@ -162,14 +186,12 @@
             padding: 1rem;
         }
 
-        .view.active {
-            display: block;
-        }
+        .view.active { display: block; }
 
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 360px;
+            grid-template-columns: 1fr 340px;
             grid-template-rows: auto 1fr auto;
             gap: 1rem;
             height: 100%;
@@ -180,26 +202,26 @@
             grid-column: 1 / -1;
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 1rem;
+            gap: 0.875rem;
         }
 
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
         }
 
         .stat-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
         .stat-value {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
         }
@@ -213,19 +235,21 @@
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
         .card-header {
-            padding: 1rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
         .card-body {
@@ -242,7 +266,7 @@
             min-height: 350px;
             position: relative;
             background: 
-                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, var(--accent-glow) 0%, transparent 50%),
                 linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 30px 30px,
                 linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 30px 30px;
         }
@@ -251,8 +275,8 @@
 
         /* Device List */
         .device-item {
-            padding: 0.75rem;
-            border-radius: 8px;
+            padding: 0.625rem;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.15s;
             border: 1px solid transparent;
@@ -280,35 +304,35 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.875rem;
         }
 
-        .device-icon { font-size: 1.1rem; }
-
         .device-type-badge {
-            font-size: 0.65rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 4px;
+            font-size: 0.6rem;
+            padding: 0.125rem 0.4rem;
+            border-radius: 3px;
             background: var(--bg-tertiary);
             color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
-        .device-type-badge.desktop { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
-        .device-type-badge.server { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
-        .device-type-badge.router { background: rgba(34, 211, 238, 0.2); color: var(--accent); }
-        .device-type-badge.mobile { background: rgba(236, 72, 153, 0.2); color: var(--pink); }
+        .device-type-badge.desktop { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+        .device-type-badge.server { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .device-type-badge.router { background: var(--accent-glow); color: var(--accent); }
+        .device-type-badge.mobile { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
 
         .device-ip {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
         }
 
         .device-stats {
             display: flex;
             gap: 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
+            margin-top: 0.375rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
         }
 
@@ -317,62 +341,36 @@
             grid-row: 2;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-        }
-
-        /* Activity List */
-        .activity-item {
-            padding: 0.75rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-        }
-
-        .activity-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.25rem;
-        }
-
-        .activity-type { font-weight: 500; }
-
-        .activity-time {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .activity-details {
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
+            gap: 0.875rem;
         }
 
         /* Threat Panel */
         .threat-item {
-            padding: 0.75rem;
+            padding: 0.625rem;
             border-left: 3px solid var(--danger);
-            background: rgba(239, 68, 68, 0.1);
-            margin: 0.5rem;
-            border-radius: 0 8px 8px 0;
+            background: rgba(239, 68, 68, 0.08);
+            margin: 0.375rem;
+            border-radius: 0 6px 6px 0;
         }
 
-        .threat-item.critical { border-color: var(--critical); background: rgba(220, 38, 38, 0.15); }
+        .threat-item.critical { border-color: var(--critical); background: rgba(220, 38, 38, 0.12); }
         .threat-item.high { border-color: var(--danger); }
-        .threat-item.medium { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
-        .threat-item.low { border-color: var(--blue); background: rgba(59, 130, 246, 0.1); }
+        .threat-item.medium { border-color: var(--warning); background: rgba(245, 158, 11, 0.08); }
+        .threat-item.low { border-color: var(--info); background: rgba(59, 130, 246, 0.08); }
 
         .threat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
-        .threat-title { font-weight: 600; }
+        .threat-title { font-weight: 600; font-size: 0.85rem; }
 
         .threat-badge {
-            font-size: 0.65rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 4px;
+            font-size: 0.6rem;
+            padding: 0.125rem 0.4rem;
+            border-radius: 3px;
             text-transform: uppercase;
             font-weight: 600;
         }
@@ -380,23 +378,18 @@
         .threat-badge.critical { background: var(--critical); color: white; }
         .threat-badge.high { background: var(--danger); color: white; }
         .threat-badge.medium { background: var(--warning); color: black; }
-        .threat-badge.low { background: var(--blue); color: white; }
+        .threat-badge.low { background: var(--info); color: white; }
 
         .threat-description {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .threat-actions {
-            display: flex;
-            gap: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
         /* Buttons */
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 0.45rem 0.875rem;
+            border-radius: 5px;
             font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
@@ -405,49 +398,53 @@
         }
 
         .btn-primary { background: var(--accent); color: #000; }
-        .btn-primary:hover { background: var(--accent-dim); }
+        .btn-primary:hover { background: var(--accent-bright); }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: var(--bg-hover); }
+        .btn-secondary { 
+            background: var(--bg-tertiary); 
+            color: var(--text-primary); 
+            border: 1px solid var(--border); 
+        }
+        .btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-light); }
 
         /* Bottom Bar */
         .bottom-bar {
             grid-column: 1 / -1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 0.875rem;
         }
 
         /* Connection Table */
         .conn-row {
             display: grid;
-            grid-template-columns: 120px 1fr 80px 80px;
-            padding: 0.5rem;
+            grid-template-columns: 110px 1fr 80px 70px;
+            padding: 0.4rem 0.5rem;
             border-bottom: 1px solid var(--border);
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
         .conn-row:hover { background: var(--bg-hover); }
         .conn-process { color: var(--accent); font-weight: 500; }
-        .conn-remote { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
-        .conn-port { color: var(--purple); font-family: 'JetBrains Mono', monospace; }
+        .conn-remote { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+        .conn-port { color: var(--accent-dim); font-family: 'JetBrains Mono', monospace; }
         
         .conn-state {
-            font-size: 0.7rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 4px;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
             text-align: center;
         }
         
-        .conn-state.established { background: rgba(34, 197, 94, 0.2); color: var(--success); }
-        .conn-state.listen { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+        .conn-state.established { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+        .conn-state.listen { background: rgba(59, 130, 246, 0.15); color: var(--info); }
 
         /* Modal */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
@@ -459,7 +456,7 @@
         .modal {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 12px;
             width: 90%;
             max-width: 800px;
             max-height: 80vh;
@@ -469,55 +466,57 @@
         }
 
         .modal-header {
-            padding: 1.5rem;
+            padding: 1.25rem;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .modal-title { font-size: 1.25rem; font-weight: 600; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; }
 
         .modal-close {
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             cursor: pointer;
+            padding: 0.25rem;
         }
 
         .modal-close:hover { color: var(--text-primary); }
 
         .modal-body {
-            padding: 1.5rem;
+            padding: 1.25rem;
             overflow-y: auto;
             flex: 1;
         }
 
         .modal-footer {
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.25rem;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
             gap: 0.5rem;
         }
 
-        /* Device Detail Tabs */
+        /* Tabs */
         .tabs {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.375rem;
             margin-bottom: 1rem;
             border-bottom: 1px solid var(--border);
             padding-bottom: 0.5rem;
         }
 
         .tab {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 0.45rem 0.875rem;
+            border-radius: 5px;
             cursor: pointer;
             color: var(--text-secondary);
             transition: all 0.15s;
             user-select: none;
+            font-size: 0.85rem;
         }
 
         .tab:hover { color: var(--text-primary); background: var(--bg-hover); }
@@ -530,33 +529,33 @@
         .telemetry-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+            gap: 0.875rem;
         }
 
         .telemetry-card {
             background: var(--bg-tertiary);
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 6px;
+            padding: 0.875rem;
         }
 
         .telemetry-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
         }
 
         .telemetry-value {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         /* AI Analysis Panel */
         .ai-panel {
-            background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(168, 85, 247, 0.1));
-            border: 1px solid var(--accent);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent-dim);
+            border-radius: 6px;
+            padding: 0.875rem;
+            margin-top: 0.875rem;
         }
 
         .ai-header {
@@ -564,43 +563,15 @@
             align-items: center;
             gap: 0.5rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
+            color: var(--accent);
         }
 
         .ai-response {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
             line-height: 1.5;
         }
-
-        /* Remediation Steps */
-        .remediation-steps { margin-top: 1rem; }
-
-        .step {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            border-left: 2px solid var(--border);
-            margin-left: 0.5rem;
-        }
-
-        .step-number {
-            width: 28px;
-            height: 28px;
-            background: var(--accent);
-            color: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-
-        .step-content { flex: 1; }
-        .step-title { font-weight: 500; margin-bottom: 0.25rem; }
-        .step-description { font-size: 0.85rem; color: var(--text-secondary); }
 
         /* Empty State */
         .empty-state {
@@ -613,15 +584,21 @@
             text-align: center;
         }
 
-        .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+        .empty-icon { 
+            font-size: 1.5rem; 
+            margin-bottom: 0.5rem; 
+            opacity: 0.4; 
+        }
 
         /* Live indicator */
         .live-badge {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
+            gap: 0.375rem;
+            font-size: 0.7rem;
             color: var(--success);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .live-dot {
@@ -637,11 +614,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .view-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
         }
 
@@ -658,7 +635,7 @@
 
         .data-table th,
         .data-table td {
-            padding: 0.75rem 1rem;
+            padding: 0.625rem 0.875rem;
             text-align: left;
             border-bottom: 1px solid var(--border);
         }
@@ -666,56 +643,53 @@
         .data-table th {
             background: var(--bg-tertiary);
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             color: var(--text-muted);
         }
 
-        .data-table tr:hover {
-            background: var(--bg-hover);
-        }
+        .data-table tr:hover { background: var(--bg-hover); }
 
         /* Grid layout for devices view */
         .devices-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.875rem;
         }
 
         .device-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
+            border-radius: 8px;
+            padding: 0.875rem;
             cursor: pointer;
             transition: all 0.15s;
         }
 
         .device-card:hover {
             border-color: var(--accent);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
         /* Form Elements */
-        .form-group {
-            margin-bottom: 1rem;
-        }
+        .form-group { margin-bottom: 0.875rem; }
 
         .form-label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.375rem;
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .form-input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.625rem;
             background: var(--bg-tertiary);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 5px;
             color: var(--text-primary);
             font-family: inherit;
+            font-size: 0.875rem;
         }
 
         .form-input:focus {
@@ -724,27 +698,51 @@
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-        /* Fade animation */
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Tool badge */
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border);
+        }
+        .tool-badge.available {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .tool-badge.missing {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
         }
 
-        /* Toast animations */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(100px); }
-            to { opacity: 1; transform: translateX(0); }
+        /* Debug log styles */
+        .debug-log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: #050505;
+            color: var(--text-muted);
+            padding: 0.625rem;
+            height: 320px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
+        .log-phase { color: var(--accent); }
+        .log-agent { color: #22d3ee; }
+        .log-llm { color: #a855f7; }
+        .log-http { color: var(--info); }
+        .log-vuln { color: var(--danger); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--danger); }
+        .log-warn { color: var(--warning); }
     </style>
 </head>
 <body>
@@ -753,45 +751,45 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <div class="logo-icon">A</div>
-                    <span>ARTEMIS</span>
+                    <img src="/static/images/Logo_Only.png" alt="Artemis" class="logo-img">
+                    <span class="logo-text">ARTEMIS</span>
                 </div>
             </div>
             <nav class="nav-section" id="mainNav">
                 <div class="nav-item active" data-view="dashboard">
-                    <span class="nav-icon">&#128200;</span>
+                    <span class="nav-icon">~</span>
                     <span>Dashboard</span>
                 </div>
                 <div class="nav-item" data-view="devices">
-                    <span class="nav-icon">&#128430;</span>
+                    <span class="nav-icon">#</span>
                     <span>Endpoints</span>
                 </div>
                 <div class="nav-item" data-view="network">
-                    <span class="nav-icon">&#127760;</span>
+                    <span class="nav-icon">@</span>
                     <span>Network</span>
                 </div>
                 <div class="nav-item" data-view="threats">
-                    <span class="nav-icon">&#9888;</span>
+                    <span class="nav-icon">!</span>
                     <span>Threats</span>
                 </div>
                 <div class="nav-item" data-view="scan">
-                    <span class="nav-icon">&#128269;</span>
-                    <span>File Scanner</span>
+                    <span class="nav-icon">?</span>
+                    <span>Scanner</span>
                 </div>
                 <div class="nav-item" data-view="remediation">
-                    <span class="nav-icon">&#128736;</span>
+                    <span class="nav-icon">+</span>
                     <span>Remediation</span>
                 </div>
                 <div class="nav-item" data-view="pentest">
-                    <span class="nav-icon">&#128272;</span>
+                    <span class="nav-icon">*</span>
                     <span>Pentest</span>
                 </div>
                 <div class="nav-item" data-view="rules">
-                    <span class="nav-icon">&#128203;</span>
+                    <span class="nav-icon">=</span>
                     <span>Rules</span>
                 </div>
                 <div class="nav-item" data-view="settings">
-                    <span class="nav-icon">&#9881;</span>
+                    <span class="nav-icon">%</span>
                     <span>Settings</span>
                 </div>
             </nav>
@@ -852,7 +850,7 @@
                         <!-- Network Map -->
                         <div class="card network-map">
                             <div class="card-header">
-                                <span>&#127760; Network Topology</span>
+                                <span>Network Topology</span>
                                 <button class="btn btn-secondary" onclick="refreshTopology()">Refresh</button>
                             </div>
                             <div class="card-body map-container">
@@ -864,25 +862,25 @@
                         <div class="sidebar-panel">
                             <div class="card" style="flex: 1;">
                                 <div class="card-header">
-                                    <span>&#128430; Endpoints</span>
+                                    <span>Endpoints</span>
                                     <span id="deviceCountBadge">0</span>
                                 </div>
                                 <div class="card-body" id="devicesList">
                                     <div class="empty-state">
-                                        <div class="empty-icon">&#128269;</div>
+                                        <div class="empty-icon">[...]</div>
                                         <div>Scanning network...</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="card" style="max-height: 280px;">
+                            <div class="card" style="max-height: 260px;">
                                 <div class="card-header">
-                                    <span>&#9888; Active Threats</span>
+                                    <span>Active Threats</span>
                                     <span id="threatCountBadge">0</span>
                                 </div>
                                 <div class="card-body" id="threatsList">
                                     <div class="empty-state">
-                                        <div class="empty-icon">&#9989;</div>
+                                        <div class="empty-icon">[OK]</div>
                                         <div>No active threats</div>
                                     </div>
                                 </div>
@@ -891,27 +889,27 @@
 
                         <!-- Bottom Panels -->
                         <div class="bottom-bar">
-                            <div class="card" style="max-height: 200px;">
+                            <div class="card" style="max-height: 180px;">
                                 <div class="card-header">
-                                    <span>&#128279; Active Connections</span>
+                                    <span>Active Connections</span>
                                     <span class="live-badge"><span class="live-dot"></span></span>
                                 </div>
                                 <div class="card-body" id="connectionsList">
                                     <div class="empty-state">
-                                        <div class="empty-icon">&#128279;</div>
+                                        <div class="empty-icon">[~]</div>
                                         <div>Monitoring...</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="card" style="max-height: 200px;">
+                            <div class="card" style="max-height: 180px;">
                                 <div class="card-header">
-                                    <span>&#129302; AI Analysis Feed</span>
+                                    <span>AI Analysis Feed</span>
                                     <span class="live-badge"><span class="live-dot"></span></span>
                                 </div>
                                 <div class="card-body" id="aiList">
                                     <div class="empty-state">
-                                        <div class="empty-icon">&#129302;</div>
+                                        <div class="empty-icon">[AI]</div>
                                         <div>AI monitoring active</div>
                                     </div>
                                 </div>
@@ -925,13 +923,13 @@
                     <div class="view-header">
                         <h2 class="view-title">Endpoints</h2>
                         <div class="view-actions">
-                            <button class="btn btn-secondary" onclick="scanNetwork()">&#128269; Scan Network</button>
-                            <button class="btn btn-primary" onclick="exportDevices()">&#128190; Export</button>
+                            <button class="btn btn-secondary" onclick="scanNetwork()">Scan Network</button>
+                            <button class="btn btn-primary" onclick="exportDevices()">Export</button>
                         </div>
                     </div>
                     <div class="devices-grid" id="devicesGrid">
                         <div class="empty-state">
-                            <div class="empty-icon">&#128430;</div>
+                            <div class="empty-icon">[#]</div>
                             <div>No endpoints discovered yet</div>
                         </div>
                     </div>
@@ -943,7 +941,7 @@
                         <h2 class="view-title">Network Traffic</h2>
                         <div class="view-actions">
                             <button class="btn btn-secondary" onclick="clearConnections()">Clear</button>
-                            <button class="btn btn-primary" onclick="exportTraffic()">&#128190; Export</button>
+                            <button class="btn btn-primary" onclick="exportTraffic()">Export</button>
                         </div>
                     </div>
                     <div class="card">
@@ -951,7 +949,7 @@
                             <span>Active Connections</span>
                             <span class="live-badge"><span class="live-dot"></span> Live</span>
                         </div>
-                        <div class="card-body" style="max-height: calc(100vh - 280px);">
+                        <div class="card-body" style="max-height: calc(100vh - 260px);">
                             <table class="data-table" id="connectionsTable">
                                 <thead>
                                     <tr>
@@ -962,8 +960,7 @@
                                         <th>Protocol</th>
                                     </tr>
                                 </thead>
-                                <tbody id="connectionsTableBody">
-                                </tbody>
+                                <tbody id="connectionsTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -980,9 +977,9 @@
                     </div>
                     <div id="threatsFullList">
                         <div class="empty-state">
-                            <div class="empty-icon">&#9989;</div>
+                            <div class="empty-icon">[OK]</div>
                             <div>No active threats detected</div>
-                            <p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active and analyzing network traffic</p>
+                            <p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active</p>
                         </div>
                     </div>
                 </div>
@@ -992,18 +989,18 @@
                     <div class="view-header">
                         <h2 class="view-title">File Scanner</h2>
                         <div class="view-actions">
-                            <button class="btn btn-primary" onclick="startScan()">&#128269; Start Scan</button>
+                            <button class="btn btn-primary" onclick="startScan()">Start Scan</button>
                         </div>
                     </div>
-                    <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">Scan Configuration</div>
-                        <div class="card-body" style="padding: 1rem;">
+                        <div class="card-body" style="padding: 0.875rem;">
                             <div class="form-group">
                                 <label class="form-label">Target Path</label>
                                 <input type="text" class="form-input" id="scanPath" placeholder="C:\Users\...">
                             </div>
-                            <div style="display: flex; gap: 1rem;">
-                                <label><input type="checkbox" id="scanDeep"> Deep Scan (PE Analysis)</label>
+                            <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                                <label><input type="checkbox" id="scanDeep"> Deep Scan</label>
                                 <label><input type="checkbox" id="scanAI" checked> AI Analysis</label>
                                 <label><input type="checkbox" id="scanRecursive" checked> Recursive</label>
                             </div>
@@ -1014,9 +1011,9 @@
                             <span>Scan Results</span>
                             <span id="scanStatus">Ready</span>
                         </div>
-                        <div class="card-body" id="scanResults" style="min-height: 200px;">
+                        <div class="card-body" id="scanResults" style="min-height: 180px;">
                             <div class="empty-state">
-                                <div class="empty-icon">&#128269;</div>
+                                <div class="empty-icon">[?]</div>
                                 <div>Configure and start a scan</div>
                             </div>
                         </div>
@@ -1028,16 +1025,14 @@
                     <div class="view-header">
                         <h2 class="view-title">Remediation Center</h2>
                         <div class="view-actions">
-                            <button class="btn btn-secondary" onclick="viewHistory()">&#128203; History</button>
-                            <button class="btn btn-warning" onclick="rollbackLast()">&#8617; Rollback Last</button>
+                            <button class="btn btn-secondary" onclick="viewHistory()">History</button>
+                            <button class="btn btn-secondary" onclick="rollbackLast()">Rollback Last</button>
                         </div>
                     </div>
-                    <div class="ai-panel" style="margin-bottom: 1rem;">
-                        <div class="ai-header">
-                            <span>&#129302;</span> AI Remediation Assistant
-                        </div>
+                    <div class="ai-panel" style="margin-bottom: 0.875rem;">
+                        <div class="ai-header">AI Remediation Assistant</div>
                         <div class="ai-response">
-                            The AI remediation assistant uses double-scan verification to ensure accurate threat identification before taking action. All remediation actions are logged and can be rolled back.
+                            Double-scan verification ensures accurate threat identification before action. All remediation actions are logged and reversible.
                         </div>
                     </div>
                     <div class="card">
@@ -1045,9 +1040,9 @@
                             <span>Pending Actions</span>
                             <span id="pendingActionsCount">0</span>
                         </div>
-                        <div class="card-body" id="pendingActions" style="min-height: 200px;">
+                        <div class="card-body" id="pendingActions" style="min-height: 180px;">
                             <div class="empty-state">
-                                <div class="empty-icon">&#9989;</div>
+                                <div class="empty-icon">[OK]</div>
                                 <div>No pending remediation actions</div>
                             </div>
                         </div>
@@ -1059,47 +1054,46 @@
                     <div class="view-header">
                         <h2 class="view-title">Penetration Testing</h2>
                         <div class="view-actions">
-                            <button class="btn btn-secondary" onclick="viewPentestHistory()">&#128203; History</button>
-                            <button class="btn btn-primary" onclick="showPentestModal()">&#128272; New Pentest</button>
+                            <button class="btn btn-secondary" onclick="viewPentestHistory()">History</button>
+                            <button class="btn btn-primary" onclick="showPentestModal()">New Pentest</button>
                         </div>
                     </div>
                     
-                    <!-- Tools Status Panel -->
-                    <div class="card" style="margin-bottom: 1rem;" id="pentestToolsCard">
+                    <!-- Tools Status -->
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">
-                            <span>&#128295; Security Tools</span>
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="refreshToolsStatus()">Refresh</button>
+                            <span>Security Tools</span>
+                            <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="refreshToolsStatus()">Refresh</button>
                         </div>
-                        <div class="card-body" style="padding: 0.75rem;">
-                            <div id="toolsStatusGrid" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                <span style="color: var(--text-muted);">Loading tools status...</span>
+                        <div class="card-body" style="padding: 0.625rem;">
+                            <div id="toolsStatusGrid" style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">Loading...</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Pentest Status Panel -->
-                    <div class="card" style="margin-bottom: 1rem;" id="pentestStatusCard">
+                    <!-- Pentest Status -->
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">
-                            <span>&#9881; Pentest Status</span>
+                            <span>Pentest Status</span>
                             <span class="status-badge" id="pentestStatusBadge">
                                 <span class="status-dot"></span>
                                 <span id="pentestStatusText">Idle</span>
                             </span>
                         </div>
-                        <div class="card-body" style="padding: 1rem;">
+                        <div class="card-body" style="padding: 0.875rem;">
                             <div id="pentestIdleState">
                                 <div class="empty-state">
-                                    <div class="empty-icon">&#128272;</div>
+                                    <div class="empty-icon">[*]</div>
                                     <div>No pentest running</div>
-                                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Start a new penetration test to analyze a target</p>
-                                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="showPentestModal()">Start Pentest</button>
+                                    <button class="btn btn-primary" style="margin-top: 0.875rem;" onclick="showPentestModal()">Start Pentest</button>
                                 </div>
                             </div>
                             <div id="pentestRunningState" style="display: none;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
                                     <div class="stat-card">
                                         <div class="stat-label">Target</div>
-                                        <div class="stat-value" id="pentestTarget" style="font-size: 0.9rem;">-</div>
+                                        <div class="stat-value" id="pentestTarget" style="font-size: 0.85rem;">-</div>
                                     </div>
                                     <div class="stat-card">
                                         <div class="stat-label">Progress</div>
@@ -1110,19 +1104,17 @@
                                         <div class="stat-value danger" id="pentestVulnCount">0</div>
                                     </div>
                                 </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <div style="margin-bottom: 0.875rem;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.375rem; font-size: 0.85rem;">
                                         <span id="pentestCurrentAgent">Starting...</span>
                                         <span id="pentestCurrentTask" style="color: var(--text-muted);"></span>
                                     </div>
-                                    <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
-                                        <div id="pentestProgressBar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); width: 0%; transition: width 0.3s;"></div>
+                                    <div style="height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                                        <div id="pentestProgressBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
                                     </div>
                                 </div>
-                                <div id="pentestAgentList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                    <!-- Agent status badges will be inserted here -->
-                                </div>
-                                <div style="margin-top: 1rem; text-align: right;">
+                                <div id="pentestAgentList" style="display: flex; flex-wrap: wrap; gap: 0.375rem;"></div>
+                                <div style="margin-top: 0.875rem; text-align: right;">
                                     <button class="btn btn-danger" onclick="cancelPentest()">Cancel</button>
                                 </div>
                             </div>
@@ -1130,42 +1122,32 @@
                     </div>
 
                     <!-- Vulnerabilities Found -->
-                    <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">
-                            <span>&#9888; Vulnerabilities Found</span>
-                            <span id="pentestVulnBadge" style="background: var(--danger); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem;">0</span>
+                            <span>Vulnerabilities Found</span>
+                            <span id="pentestVulnBadge" style="background: var(--danger); color: white; padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.8rem;">0</span>
                         </div>
-                        <div class="card-body" id="pentestVulnList" style="min-height: 150px; max-height: 250px;">
+                        <div class="card-body" id="pentestVulnList" style="min-height: 140px; max-height: 230px;">
                             <div class="empty-state">
-                                <div class="empty-icon">&#9989;</div>
+                                <div class="empty-icon">[OK]</div>
                                 <div>No vulnerabilities found yet</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Debug Log Panel -->
-                    <div class="card" id="pentestDebugPanel">
+                    <!-- Debug Log -->
+                    <div class="card">
                         <div class="card-header" style="cursor: pointer;" onclick="toggleDebugPanel()">
-                            <span>&#128187; Debug Log</span>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span>Debug Log</span>
+                            <div style="display: flex; align-items: center; gap: 0.625rem;">
                                 <span class="live-badge" id="debugLiveBadge" style="display: none;"><span class="live-dot"></span> Live</span>
-                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); clearDebugLog()">Clear</button>
-                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); downloadDebugLog()">Export</button>
-                                <span id="debugToggleIcon" style="font-size: 1.2rem;">&#9660;</span>
+                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="event.stopPropagation(); clearDebugLog()">Clear</button>
+                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="event.stopPropagation(); downloadDebugLog()">Export</button>
+                                <span id="debugToggleIcon" style="font-size: 0.9rem;">[-]</span>
                             </div>
                         </div>
-                        <div class="card-body" id="pentestDebugBody" style="padding: 0; max-height: 400px; display: block;">
-                            <div id="pentestDebugLog" style="
-                                font-family: 'JetBrains Mono', monospace;
-                                font-size: 0.8rem;
-                                background: #0a0a0f;
-                                color: #a1a1aa;
-                                padding: 0.75rem;
-                                height: 350px;
-                                overflow-y: auto;
-                                white-space: pre-wrap;
-                                word-break: break-all;
-                            "><span style="color: var(--text-muted);">[Waiting for pentest to start...]</span></div>
+                        <div class="card-body" id="pentestDebugBody" style="padding: 0;">
+                            <div id="pentestDebugLog" class="debug-log"><span style="color: var(--text-muted);">[Waiting for pentest...]</span></div>
                         </div>
                     </div>
                 </div>
@@ -1175,29 +1157,26 @@
                     <div class="view-header">
                         <h2 class="view-title">Detection Rules</h2>
                         <div class="view-actions">
-                            <button class="btn btn-secondary" onclick="importRules()">&#128230; Import</button>
-                            <button class="btn btn-primary" onclick="generateRule()">&#10010; Generate Rule</button>
+                            <button class="btn btn-secondary" onclick="importRules()">Import</button>
+                            <button class="btn btn-primary" onclick="generateRule()">Generate Rule</button>
                         </div>
                     </div>
                     <div class="card">
                         <div class="card-header">
                             <span>Rule Library</span>
-                            <div>
-                                <select class="form-input" style="width: auto; padding: 0.25rem 0.5rem;" id="ruleFormatFilter">
-                                    <option value="">All Formats</option>
-                                    <option value="sigma">Sigma</option>
-                                    <option value="yara">YARA</option>
-                                    <option value="splunk">Splunk</option>
-                                    <option value="kql">KQL</option>
-                                    <option value="snort">Snort</option>
-                                </select>
-                            </div>
+                            <select class="form-input" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;" id="ruleFormatFilter">
+                                <option value="">All Formats</option>
+                                <option value="sigma">Sigma</option>
+                                <option value="yara">YARA</option>
+                                <option value="splunk">Splunk</option>
+                                <option value="kql">KQL</option>
+                                <option value="snort">Snort</option>
+                            </select>
                         </div>
-                        <div class="card-body" id="rulesList" style="min-height: 300px;">
+                        <div class="card-body" id="rulesList" style="min-height: 280px;">
                             <div class="empty-state">
-                                <div class="empty-icon">&#128203;</div>
+                                <div class="empty-icon">[=]</div>
                                 <div>No rules loaded</div>
-                                <p style="color: var(--text-muted); margin-top: 0.5rem;">Generate or import detection rules</p>
                             </div>
                         </div>
                     </div>
@@ -1211,9 +1190,9 @@
                             <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
                         </div>
                     </div>
-                    <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">AI Configuration</div>
-                        <div class="card-body" style="padding: 1rem;">
+                        <div class="card-body" style="padding: 0.875rem;">
                             <div class="form-group">
                                 <label class="form-label">AI Provider</label>
                                 <select class="form-input" id="settingsProvider">
@@ -1225,16 +1204,16 @@
                             <div class="form-group">
                                 <label class="form-label">Model</label>
                                 <select class="form-input" id="settingsModel">
-                                    <option value="deepseek-r1:70b" selected>deepseek-r1:70b (Recommended)</option>
+                                    <option value="deepseek-r1:70b" selected>deepseek-r1:70b</option>
                                     <option value="qwen3:32b">qwen3:32b</option>
                                     <option value="qwen3:14b">qwen3:14b</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-                    <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card" style="margin-bottom: 0.875rem;">
                         <div class="card-header">Network Monitoring</div>
-                        <div class="card-body" style="padding: 1rem;">
+                        <div class="card-body" style="padding: 0.875rem;">
                             <div class="form-group">
                                 <label class="form-label">Scan Interval (seconds)</label>
                                 <input type="number" class="form-input" id="settingsScanInterval" value="60">
@@ -1247,10 +1226,10 @@
                     </div>
                     <div class="card">
                         <div class="card-header">Remediation</div>
-                        <div class="card-body" style="padding: 1rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="card-body" style="padding: 0.875rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.625rem; font-size: 0.875rem;">
                                 <label><input type="checkbox" id="settingsAutoQuarantine"> Auto-quarantine high-severity threats</label>
-                                <label><input type="checkbox" id="settingsDoubleVerify" checked> Double-scan verification (anti-hallucination)</label>
+                                <label><input type="checkbox" id="settingsDoubleVerify" checked> Double-scan verification</label>
                                 <label><input type="checkbox" id="settingsRequireApproval" checked> Require approval for destructive actions</label>
                             </div>
                         </div>
@@ -1265,7 +1244,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h2 class="modal-title" id="modalDeviceName">Device Details</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()">x</button>
             </div>
             <div class="modal-body">
                 <div class="tabs" id="deviceTabs">
@@ -1275,125 +1254,61 @@
                     <div class="tab" data-tab="telemetry">Telemetry</div>
                     <div class="tab" data-tab="actions">Actions</div>
                 </div>
-
                 <div class="tab-content active" id="tab-overview">
                     <div class="telemetry-grid" id="deviceOverview"></div>
                 </div>
-
                 <div class="tab-content" id="tab-network">
-                    <div id="deviceConnections"></div>
+                    <div id="deviceNetworkInfo"></div>
                 </div>
-
                 <div class="tab-content" id="tab-processes">
-                    <div id="deviceProcesses"></div>
+                    <div id="deviceProcessList"></div>
                 </div>
-
                 <div class="tab-content" id="tab-telemetry">
-                    <div id="deviceTelemetry">
-                        <p style="color: var(--text-muted);">Full telemetry available for host machine and compatible endpoints.</p>
-                    </div>
+                    <div id="deviceTelemetry"></div>
                 </div>
-
                 <div class="tab-content" id="tab-actions">
                     <div id="deviceActions"></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-                <button class="btn btn-primary" onclick="scanDevice()">&#128269; Scan Device</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Remediation Modal -->
-    <div class="modal-overlay" id="remediationModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title">&#128736; Remediation Assistant</h2>
-                <button class="modal-close" onclick="closeRemediationModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="ai-panel">
-                    <div class="ai-header">
-                        <span>&#129302;</span> AI Remediation Guide
-                    </div>
-                    <div class="ai-response" id="remediationGuide">
-                        Loading AI recommendations...
-                    </div>
-                </div>
-                <div class="remediation-steps" id="remediationSteps"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeRemediationModal()">Cancel</button>
-                <button class="btn btn-danger" onclick="executeRemediation()">Execute Remediation</button>
-                <button class="btn btn-primary" onclick="autoRemediate()">Auto-Remediate</button>
+                <button class="btn btn-primary" onclick="analyzeDevice()">AI Analysis</button>
             </div>
         </div>
     </div>
 
     <!-- Pentest Modal -->
     <div class="modal-overlay" id="pentestModal">
-        <div class="modal">
+        <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
-                <h2 class="modal-title">&#128272; Start Penetration Test</h2>
-                <button class="modal-close" onclick="closePentestModal()">&times;</button>
+                <h2 class="modal-title">New Penetration Test</h2>
+                <button class="modal-close" onclick="closePentestModal()">x</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Target URL *</label>
+                    <label class="form-label">Target URL</label>
                     <input type="text" class="form-input" id="pentestTargetUrl" placeholder="https://example.com">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Source Code Path (optional, for whitebox)</label>
-                    <input type="text" class="form-input" id="pentestRepoPath" placeholder="C:\path\to\source">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">AI Model</label>
-                    <select class="form-input" id="pentestModel">
-                        <option value="deepseek-r1:70b" selected>deepseek-r1:70b (Recommended)</option>
-                        <option value="qwen3:32b">qwen3:32b</option>
-                        <option value="qwen3:14b">qwen3:14b (Faster)</option>
+                    <label class="form-label">Scope</label>
+                    <select class="form-input" id="pentestScope">
+                        <option value="full">Full Assessment</option>
+                        <option value="quick">Quick Scan</option>
+                        <option value="recon">Recon Only</option>
                     </select>
                 </div>
-                <div style="border-top: 1px solid var(--border); margin: 1rem 0; padding-top: 1rem;">
-                    <h4 style="margin-bottom: 0.75rem;">Authentication (optional)</h4>
-                    <div class="form-group">
-                        <label class="form-label">Login URL</label>
-                        <input type="text" class="form-input" id="pentestLoginUrl" placeholder="/login">
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-input" id="pentestUsername">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-input" id="pentestPassword">
-                        </div>
-                    </div>
-                </div>
                 <div class="form-group">
-                    <label><input type="checkbox" id="pentestParallel" checked> Run vulnerability agents in parallel (faster)</label>
+                    <label class="form-label">Options</label>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                        <label><input type="checkbox" id="pentestTools" checked> Use external tools</label>
+                        <label><input type="checkbox" id="pentestExploit"> Attempt exploitation</label>
+                        <label><input type="checkbox" id="pentestReport" checked> Generate report</label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closePentestModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="startPentest()">&#128272; Start Pentest</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pentest Vulnerability Detail Modal -->
-    <div class="modal-overlay" id="pentestVulnModal">
-        <div class="modal" style="max-width: 700px;">
-            <div class="modal-header">
-                <h2 class="modal-title" id="pentestVulnTitle">Vulnerability Details</h2>
-                <button class="modal-close" onclick="closePentestVulnModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="pentestVulnDetails">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closePentestVulnModal()">Close</button>
+                <button class="btn btn-primary" onclick="startPentest()">Start Pentest</button>
             </div>
         </div>
     </div>
@@ -1401,912 +1316,177 @@
     <script>
         // State
         let state = {
-            devices: {},
-            connections: [],
+            devices: [],
             threats: [],
-            ai_analyses: [],
-            traffic_stats: {},
-            agent_status: {}
+            connections: [],
+            selectedDevice: null,
+            pentestRunning: false,
+            pentestSessionId: null,
+            ws: null,
+            debugExpanded: true,
+            debugLogs: []
         };
-
-        let selectedDevice = null;
-        let currentView = 'dashboard';
-        let ws = null;
 
         // Navigation
-        function initNavigation() {
-            document.querySelectorAll('#mainNav .nav-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const view = item.dataset.view;
-                    switchView(view);
-                });
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const view = item.dataset.view;
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(`view-${view}`).classList.add('active');
+                
+                const titles = {
+                    dashboard: 'Security Operations Center',
+                    devices: 'Endpoint Management',
+                    network: 'Network Traffic',
+                    threats: 'Threat Detection',
+                    scan: 'File Scanner',
+                    remediation: 'Remediation Center',
+                    pentest: 'Penetration Testing',
+                    rules: 'Detection Rules',
+                    settings: 'Settings'
+                };
+                document.getElementById('pageTitle').textContent = titles[view] || view;
             });
-        }
+        });
 
-        function switchView(viewName) {
-            // Update nav items
-            document.querySelectorAll('#mainNav .nav-item').forEach(item => {
-                item.classList.toggle('active', item.dataset.view === viewName);
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                const parent = tab.closest('.modal-body') || document;
+                parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tabName}`).classList.add('active');
             });
+        });
 
-            // Update views
-            document.querySelectorAll('.view').forEach(view => {
-                view.classList.toggle('active', view.id === 'view-' + viewName);
-            });
-
-            // Update header title
-            const titles = {
-                dashboard: 'Security Operations Center',
-                devices: 'Endpoints',
-                network: 'Network Traffic',
-                threats: 'Threat Detection',
-                scan: 'File Scanner',
-                remediation: 'Remediation Center',
-                pentest: 'Penetration Testing',
-                rules: 'Detection Rules',
-                settings: 'Settings'
-            };
-            document.getElementById('pageTitle').textContent = titles[viewName] || 'Artemis SOC';
-
-            currentView = viewName;
+        // WebSocket
+        function connectWS() {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            state.ws = new WebSocket(`${protocol}//${location.host}/ws/live`);
             
-            // Trigger view-specific rendering
-            if (viewName === 'devices') renderDevicesGrid();
-            if (viewName === 'network') renderConnectionsTable();
-            if (viewName === 'threats') renderThreatsFull();
-        }
-
-        // Modal Tab Handling
-        function initModalTabs() {
-            document.querySelectorAll('#deviceTabs .tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('#deviceTabs .tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('#deviceModal .tab-content').forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-                });
-            });
-        }
-
-        // WebSocket Connection
-        function connect() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${window.location.host}/ws/live`);
-
-            ws.onopen = () => {
-                console.log('Connected to Artemis SOC');
-                updateStatus(true);
+            state.ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('agentDot').className = 'status-dot online';
             };
-
-            ws.onclose = () => {
-                updateStatus(false);
-                setTimeout(connect, 3000);
+            
+            state.ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWSMessage(data);
             };
-
-            ws.onerror = (err) => {
-                console.error('WebSocket error:', err);
-            };
-
-            ws.onmessage = (e) => {
-                try {
-                    const msg = JSON.parse(e.data);
-                    handleMessage(msg);
-                } catch (err) {
-                    console.error('Failed to parse message:', err);
-                }
+            
+            state.ws.onclose = () => {
+                document.getElementById('agentDot').className = 'status-dot warning';
+                setTimeout(connectWS, 3000);
             };
         }
 
-        function handleMessage(msg) {
-            switch(msg.type) {
-                case 'initial_state':
-                    state = msg.data;
-                    renderAll();
+        function handleWSMessage(data) {
+            switch(data.type) {
+                case 'devices':
+                    state.devices = data.devices || [];
+                    updateDevicesList();
                     break;
-                case 'device_update':
-                    state.devices[msg.device_id] = msg.data;
-                    renderDevices();
-                    renderTopology();
-                    renderStats();
-                    if (currentView === 'devices') renderDevicesGrid();
-                    break;
-                case 'connection':
-                    state.connections.unshift(msg.data);
-                    if (state.connections.length > 200) state.connections.pop();
-                    renderConnections();
-                    if (currentView === 'network') renderConnectionsTable();
+                case 'connections':
+                    state.connections = data.connections || [];
+                    updateConnectionsList();
                     break;
                 case 'threat':
-                    state.threats.unshift(msg.data);
-                    renderThreats();
-                    renderStats();
-                    if (currentView === 'threats') renderThreatsFull();
+                    state.threats.push(data.threat);
+                    updateThreatsList();
                     break;
-                case 'ai_analysis':
-                    state.ai_analyses.unshift(msg.data);
-                    renderAI();
-                    renderStats();
-                    break;
-                case 'traffic_update':
-                    state.traffic_stats = msg.data;
-                    renderStats();
-                    break;
-                case 'agent_status':
-                    state.agent_status = msg.data;
-                    updateStatus(msg.data.running);
-                    break;
-                case 'pentest_update':
-                    handlePentestUpdate(msg.data);
-                    break;
-                case 'pentest_vulnerability':
-                    handlePentestVulnerability(msg.data);
+                case 'stats':
+                    updateStats(data);
                     break;
                 case 'pentest_log':
-                    handlePentestLog(msg.data);
+                    appendDebugLog(data.level, data.message);
+                    break;
+                case 'pentest_status':
+                    updatePentestStatus(data);
                     break;
             }
         }
 
-        function renderAll() {
-            renderStats();
-            renderDevices();
-            renderConnections();
-            renderThreats();
-            renderAI();
-            renderTopology();
+        function updateStats(data) {
+            if (data.devices !== undefined) document.getElementById('statDevices').textContent = data.devices;
+            if (data.connections !== undefined) document.getElementById('statConnections').textContent = data.connections;
+            if (data.threats !== undefined) document.getElementById('statThreats').textContent = data.threats;
+            if (data.analyses !== undefined) document.getElementById('statAnalyses').textContent = data.analyses;
         }
 
-        function renderStats() {
-            const devices = Object.keys(state.devices).length;
-            document.getElementById('statDevices').textContent = devices;
-            document.getElementById('deviceCountBadge').textContent = devices;
-            document.getElementById('statConnections').textContent = state.traffic_stats.connections_active || state.connections.length;
-            document.getElementById('statTrafficIn').textContent = formatBytes(state.traffic_stats.bytes_in || 0);
-            document.getElementById('statTrafficOut').textContent = formatBytes(state.traffic_stats.bytes_out || 0);
-            document.getElementById('statThreats').textContent = state.threats.length;
-            document.getElementById('threatCountBadge').textContent = state.threats.length;
-            document.getElementById('statAnalyses').textContent = state.agent_status.ai_analyses || state.ai_analyses.length;
-        }
-
-        function renderDevices() {
+        function updateDevicesList() {
             const container = document.getElementById('devicesList');
-            const devices = Object.values(state.devices);
-
-            if (devices.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128269;</div><div>Scanning network...</div></div>';
+            const countBadge = document.getElementById('deviceCountBadge');
+            countBadge.textContent = state.devices.length;
+            
+            if (state.devices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">[...]</div><div>Scanning network...</div></div>';
                 return;
             }
-
-            container.innerHTML = devices.map(d => {
-                const icon = getDeviceIcon(d.device_type);
-                const typeClass = d.device_type || 'unknown';
-                return `
-                    <div class="device-item fade-in ${selectedDevice === d.ip ? 'selected' : ''}" 
-                         onclick="selectDevice('${d.ip}')">
-                        <div class="device-header">
-                            <span class="device-name">
-                                <span class="device-icon">${icon}</span>
-                                ${escapeHtml(d.hostname || d.ip || 'Unknown')}
-                            </span>
-                            <span class="device-type-badge ${typeClass}">${escapeHtml(d.device_type || 'device')}</span>
-                        </div>
-                        <div class="device-ip">${escapeHtml(d.ip || '-')} ${d.mac ? '(' + escapeHtml(d.mac.substring(0,8)) + '...)' : ''}</div>
-                        <div class="device-stats">
-                            <span>&#8593; ${formatBytes(d.bytes_out || 0)}</span>
-                            <span>&#8595; ${formatBytes(d.bytes_in || 0)}</span>
-                            ${d.is_local ? '<span style="color: var(--accent);">LOCAL</span>' : ''}
-                        </div>
+            
+            container.innerHTML = state.devices.map(device => `
+                <div class="device-item" onclick="selectDevice('${device.ip}')">
+                    <div class="device-header">
+                        <span class="device-name">${device.hostname || device.ip}</span>
+                        <span class="device-type-badge ${device.type || ''}">${device.type || 'unknown'}</span>
                     </div>
-                `;
-            }).join('');
+                    <div class="device-ip">${device.ip}</div>
+                    <div class="device-stats">
+                        <span>${device.mac || '-'}</span>
+                        <span>${device.vendor || ''}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function renderDevicesGrid() {
-            const container = document.getElementById('devicesGrid');
-            const devices = Object.values(state.devices);
-
-            if (devices.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128430;</div><div>No endpoints discovered yet</div><p style="color: var(--text-muted); margin-top: 0.5rem;">Network scan in progress...</p></div>';
-                return;
-            }
-
-            container.innerHTML = devices.map(d => {
-                const icon = getDeviceIcon(d.device_type);
-                const isLocal = d.is_local ? '<span style="color: var(--accent); font-size: 0.7rem; margin-left: 0.5rem;">LOCAL</span>' : '';
-                return `
-                    <div class="device-card fade-in" data-device-ip="${escapeHtml(d.ip || '')}">
-                        <div class="device-header">
-                            <span class="device-name">
-                                <span class="device-icon" style="font-size: 1.5rem;">${icon}</span>
-                                ${escapeHtml(d.hostname || d.ip || 'Unknown')}${isLocal}
-                            </span>
-                            <span class="device-type-badge ${d.device_type || ''}">${escapeHtml(d.device_type || 'device')}</span>
-                        </div>
-                        <div class="telemetry-grid" style="margin-top: 1rem;">
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">IP Address</div>
-                                <div class="telemetry-value">${escapeHtml(d.ip || '-')}</div>
-                            </div>
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">MAC</div>
-                                <div class="telemetry-value">${escapeHtml((d.mac || '-').substring(0, 17))}</div>
-                            </div>
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">Vendor</div>
-                                <div class="telemetry-value">${escapeHtml(d.vendor || 'Unknown')}</div>
-                            </div>
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">Last Seen</div>
-                                <div class="telemetry-value">${formatTime(d.last_seen)}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                            <button class="btn btn-primary btn-scan-device" data-ip="${escapeHtml(d.ip || '')}">&#128269; Scan</button>
-                            <button class="btn btn-secondary btn-device-details" data-ip="${escapeHtml(d.ip || '')}">Details</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            // Add click handlers for device cards
-            container.querySelectorAll('.device-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    // Don't trigger if clicking a button
-                    if (e.target.closest('button')) return;
-                    const ip = card.dataset.deviceIp;
-                    if (ip) selectDevice(ip);
-                });
-            });
-            
-            // Add click handlers for scan buttons
-            container.querySelectorAll('.btn-scan-device').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const ip = btn.dataset.ip;
-                    showNotification(`Scanning ${ip}...`);
-                    selectedDevice = ip;
-                    scanDevice();
-                });
-            });
-            
-            // Add click handlers for details buttons
-            container.querySelectorAll('.btn-device-details').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const ip = btn.dataset.ip;
-                    selectDevice(ip);
-                });
-            });
-        }
-
-        function renderConnections() {
+        function updateConnectionsList() {
             const container = document.getElementById('connectionsList');
-            const conns = state.connections.slice(0, 30);
-
-            if (conns.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128279;</div><div>Monitoring...</div></div>';
+            document.getElementById('statConnections').textContent = state.connections.length;
+            
+            if (state.connections.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">[~]</div><div>Monitoring...</div></div>';
                 return;
             }
-
-            container.innerHTML = conns.map(c => `
-                <div class="conn-row fade-in">
-                    <span class="conn-process">${escapeHtml(c.process || 'unknown')}</span>
-                    <span class="conn-remote">${escapeHtml(c.remote_addr || '*')}:${c.remote_port || '*'}</span>
-                    <span class="conn-port">${c.local_port}</span>
-                    <span class="conn-state ${(c.state || '').toLowerCase()}">${escapeHtml(c.state || '-')}</span>
+            
+            container.innerHTML = state.connections.slice(0, 20).map(conn => `
+                <div class="conn-row">
+                    <span class="conn-process">${conn.process || '-'}</span>
+                    <span class="conn-remote">${conn.remote || '-'}</span>
+                    <span class="conn-port">${conn.port || '-'}</span>
+                    <span class="conn-state ${conn.state?.toLowerCase() || ''}">${conn.state || '-'}</span>
                 </div>
             `).join('');
         }
 
-        function renderConnectionsTable() {
-            const tbody = document.getElementById('connectionsTableBody');
-            const conns = state.connections.slice(0, 100);
-
-            if (conns.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No active connections</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = conns.map(c => `
-                <tr>
-                    <td class="conn-process">${escapeHtml(c.process || 'unknown')}</td>
-                    <td style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(c.local_addr || '*')}:${c.local_port}</td>
-                    <td style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(c.remote_addr || '*')}:${c.remote_port || '*'}</td>
-                    <td><span class="conn-state ${(c.state || '').toLowerCase()}">${escapeHtml(c.state || '-')}</span></td>
-                    <td>${escapeHtml(c.protocol || 'TCP')}</td>
-                </tr>
-            `).join('');
-        }
-
-        function renderThreats() {
+        function updateThreatsList() {
             const container = document.getElementById('threatsList');
-
+            const countBadge = document.getElementById('threatCountBadge');
+            countBadge.textContent = state.threats.length;
+            document.getElementById('statThreats').textContent = state.threats.length;
+            
             if (state.threats.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9989;</div><div>No active threats</div></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">[OK]</div><div>No active threats</div></div>';
                 return;
             }
-
-            container.innerHTML = state.threats.slice(0, 10).map(t => `
-                <div class="threat-item ${t.severity || 'medium'} fade-in">
+            
+            container.innerHTML = state.threats.slice(0, 5).map(threat => `
+                <div class="threat-item ${threat.severity || 'medium'}">
                     <div class="threat-header">
-                        <span class="threat-title">${escapeHtml(t.title || 'Threat')}</span>
-                        <span class="threat-badge ${t.severity || 'medium'}">${(t.severity || 'medium').toUpperCase()}</span>
+                        <span class="threat-title">${threat.title || 'Unknown Threat'}</span>
+                        <span class="threat-badge ${threat.severity || 'medium'}">${threat.severity || 'medium'}</span>
                     </div>
-                    <div class="threat-description">${escapeHtml(t.description || '')}</div>
-                    <div class="threat-actions">
-                        <button class="btn btn-primary" onclick="openRemediation('${t.id}')">Remediate</button>
-                        <button class="btn btn-secondary" onclick="viewThreatDetails('${t.id}')">Details</button>
-                    </div>
+                    <div class="threat-description">${threat.description || ''}</div>
                 </div>
             `).join('');
         }
 
-        function renderThreatsFull() {
-            const container = document.getElementById('threatsFullList');
-
-            if (state.threats.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">&#9989;</div>
-                        <div>No active threats detected</div>
-                        <p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active and analyzing network traffic</p>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = state.threats.map(t => `
-                <div class="card fade-in" style="margin-bottom: 1rem;">
-                    <div class="card-header">
-                        <span>${escapeHtml(t.title || 'Threat')}</span>
-                        <span class="threat-badge ${t.severity || 'medium'}">${(t.severity || 'medium').toUpperCase()}</span>
-                    </div>
-                    <div class="card-body" style="padding: 1rem;">
-                        <p style="margin-bottom: 1rem;">${escapeHtml(t.description || 'No description available')}</p>
-                        <div class="telemetry-grid">
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">Source</div>
-                                <div class="telemetry-value">${escapeHtml(t.source || '-')}</div>
-                            </div>
-                            <div class="telemetry-card">
-                                <div class="telemetry-label">Detected</div>
-                                <div class="telemetry-value">${formatTime(t.timestamp)}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                            <button class="btn btn-primary" onclick="openRemediation('${t.id}')">&#128736; Remediate</button>
-                            <button class="btn btn-secondary" onclick="dismissThreat('${t.id}')">Dismiss</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderAI() {
-            const container = document.getElementById('aiList');
-
-            if (state.ai_analyses.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#129302;</div><div>AI monitoring active</div></div>';
-                return;
-            }
-
-            container.innerHTML = state.ai_analyses.slice(0, 10).map(a => `
-                <div class="activity-item fade-in">
-                    <div class="activity-header">
-                        <span class="activity-type">${escapeHtml(a.target || 'Analysis')}</span>
-                        <span class="activity-time">${formatTime(a.timestamp)}</span>
-                    </div>
-                    <div class="activity-details">${escapeHtml(a.summary || a.verdict || '')}</div>
-                </div>
-            `).join('');
-        }
-
-        // Store device positions for click detection
-        let devicePositions = [];
-
-        function renderTopology() {
-            const canvas = document.getElementById('topology');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            const container = canvas.parentElement;
-
-            // Set canvas size with device pixel ratio for crisp rendering
-            const dpr = window.devicePixelRatio || 1;
-            const rect = container.getBoundingClientRect();
-            
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.height + 'px';
-            ctx.scale(dpr, dpr);
-
-            const width = rect.width;
-            const height = rect.height;
-
-            ctx.clearRect(0, 0, width, height);
-            devicePositions = [];
-
-            const devices = Object.values(state.devices);
-            if (devices.length === 0) {
-                ctx.fillStyle = '#71717a';
-                ctx.font = '14px Inter';
-                ctx.textAlign = 'center';
-                ctx.fillText('Discovering network...', width / 2, height / 2);
-                return;
-            }
-
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const radius = Math.min(width, height) * 0.35;
-
-            // Draw gateway at center
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
-            ctx.fillStyle = '#22d3ee';
-            ctx.fill();
-            ctx.fillStyle = '#0a0a0f';
-            ctx.font = 'bold 12px Inter';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('GW', centerX, centerY);
-
-            // Draw devices in a circle
-            devices.forEach((device, i) => {
-                const angle = (i / devices.length) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-
-                // Store position for click detection
-                devicePositions.push({ x, y, radius: 20, device });
-
-                // Connection line
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(x, y);
-                ctx.strokeStyle = device.ip === selectedDevice ? '#22d3ee' : '#2a2a3a';
-                ctx.lineWidth = device.ip === selectedDevice ? 2 : 1;
-                ctx.stroke();
-
-                // Device node colors
-                const colors = {
-                    router: '#22d3ee',
-                    server: '#a855f7',
-                    desktop: '#3b82f6',
-                    laptop: '#3b82f6',
-                    mobile: '#ec4899',
-                    smartphone: '#ec4899',
-                    smart_device: '#f59e0b',
-                    network: '#06b6d4',
-                    unknown: '#22c55e'
-                };
-                const color = colors[device.device_type] || colors.unknown;
-                const nodeRadius = device.ip === selectedDevice ? 22 : 18;
-
-                // Draw node
-                ctx.beginPath();
-                ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
-                ctx.fillStyle = color;
-                ctx.fill();
-
-                // Highlight if selected
-                if (device.ip === selectedDevice) {
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                }
-
-                // Local indicator
-                if (device.is_local) {
-                    ctx.beginPath();
-                    ctx.arc(x + 12, y - 12, 6, 0, Math.PI * 2);
-                    ctx.fillStyle = '#22c55e';
-                    ctx.fill();
-                }
-
-                // Label below node
-                ctx.fillStyle = '#e4e4e7';
-                ctx.font = '11px Inter';
-                ctx.textAlign = 'center';
-                const label = device.hostname || device.ip?.split('.').pop() || '?';
-                ctx.fillText(label.substring(0, 12), x, y + 35);
-            });
-        }
-
-        // Handle clicks on topology canvas
-        function initTopologyClicks() {
-            const canvas = document.getElementById('topology');
-            if (!canvas) return;
-            
-            canvas.addEventListener('click', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // Check if clicked on a device
-                for (const pos of devicePositions) {
-                    const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-                    if (dist <= pos.radius + 5) {
-                        selectDevice(pos.device.ip);
-                        return;
-                    }
-                }
-            });
-            
-            // Change cursor on hover
-            canvas.addEventListener('mousemove', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                let hovering = false;
-                for (const pos of devicePositions) {
-                    const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-                    if (dist <= pos.radius + 5) {
-                        hovering = true;
-                        break;
-                    }
-                }
-                canvas.style.cursor = hovering ? 'pointer' : 'default';
-            });
-        }
-
-        // Device Selection
-        function selectDevice(ip) {
-            selectedDevice = ip;
-            const device = state.devices[ip];
-            if (device) {
-                openDeviceModal(device);
-            }
-            renderDevices();
-            renderTopology();
-        }
-
-        function openDeviceModal(device) {
-            document.getElementById('modalDeviceName').textContent = device.hostname || device.ip || 'Device';
-            
-            // Overview tab
-            document.getElementById('deviceOverview').innerHTML = `
-                <div class="telemetry-card">
-                    <div class="telemetry-label">IP Address</div>
-                    <div class="telemetry-value">${escapeHtml(device.ip || '-')}</div>
-                </div>
-                <div class="telemetry-card">
-                    <div class="telemetry-label">MAC Address</div>
-                    <div class="telemetry-value">${escapeHtml(device.mac || '-')}</div>
-                </div>
-                <div class="telemetry-card">
-                    <div class="telemetry-label">Device Type</div>
-                    <div class="telemetry-value">${escapeHtml(device.device_type || 'Unknown')}</div>
-                </div>
-                <div class="telemetry-card">
-                    <div class="telemetry-label">Vendor</div>
-                    <div class="telemetry-value">${escapeHtml(device.vendor || 'Unknown')}</div>
-                </div>
-                <div class="telemetry-card">
-                    <div class="telemetry-label">Last Seen</div>
-                    <div class="telemetry-value">${formatTime(device.last_seen)}</div>
-                </div>
-                <div class="telemetry-card">
-                    <div class="telemetry-label">Status</div>
-                    <div class="telemetry-value" style="color: var(--success);">Online</div>
-                </div>
-            `;
-
-            // Actions tab based on device type
-            const actions = getDeviceActions(device);
-            document.getElementById('deviceActions').innerHTML = actions.map(a => `
-                <button class="btn ${a.danger ? 'btn-danger' : 'btn-secondary'}" 
-                        style="margin: 0.25rem;" 
-                        onclick="${a.action}"
-                        ${a.disabled ? 'disabled' : ''}>
-                    ${a.icon} ${a.label}
-                </button>
-            `).join('');
-
-            document.getElementById('deviceModal').classList.add('active');
-        }
-
-        function getDeviceActions(device) {
-            const actions = [
-                { icon: '&#128269;', label: 'Scan', action: 'scanDevice()', disabled: false },
-                { icon: '&#128196;', label: 'View Logs', action: 'viewLogs()', disabled: !device.is_local },
-            ];
-
-            if (['desktop', 'server'].includes(device.device_type) || device.is_local) {
-                actions.push(
-                    { icon: '&#128736;', label: 'Remediate', action: 'openRemediation()', disabled: false },
-                    { icon: '&#9888;', label: 'Isolate', action: 'isolateDevice()', disabled: false, danger: true },
-                    { icon: '&#128274;', label: 'Block', action: 'blockDevice()', disabled: false, danger: true },
-                );
-            }
-
-            if (device.is_local) {
-                actions.push(
-                    { icon: '&#128421;', label: 'Processes', action: 'viewProcesses()', disabled: false },
-                    { icon: '&#128196;', label: 'Services', action: 'viewServices()', disabled: false },
-                    { icon: '&#128268;', label: 'Registry', action: 'viewRegistry()', disabled: false },
-                );
-            }
-
-            if (['tv', 'iot', 'smart_device'].includes(device.device_type)) {
-                return [
-                    { icon: '&#128065;', label: 'View Only', action: '', disabled: true },
-                    { icon: '&#128274;', label: 'Block', action: 'blockDevice()', disabled: false, danger: true },
-                ];
-            }
-
-            return actions;
-        }
-
+        // Modals
         function closeModal() {
             document.getElementById('deviceModal').classList.remove('active');
-            selectedDevice = null;
-            renderDevices();
-            renderTopology();
         }
-
-        // Remediation
-        function openRemediation(threatId) {
-            document.getElementById('remediationModal').classList.add('active');
-            loadRemediationGuide(threatId);
-        }
-
-        function closeRemediationModal() {
-            document.getElementById('remediationModal').classList.remove('active');
-        }
-
-        async function loadRemediationGuide(threatId) {
-            document.getElementById('remediationGuide').textContent = 'Analyzing threat and generating remediation steps...';
-            document.getElementById('remediationSteps').innerHTML = '';
-
-            setTimeout(() => {
-                document.getElementById('remediationGuide').innerHTML = `
-                    Based on my analysis, this threat appears to be <strong>suspicious network activity</strong>. 
-                    I recommend the following remediation steps:
-                `;
-
-                document.getElementById('remediationSteps').innerHTML = `
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <div class="step-title">Investigate Source</div>
-                            <div class="step-description">Review the source IP and process to determine legitimacy.</div>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <div class="step-title">Block if Malicious</div>
-                            <div class="step-description">Add firewall rule to block the suspicious connection.</div>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <div class="step-title">Monitor for Recurrence</div>
-                            <div class="step-description">Set up alerts for similar activity patterns.</div>
-                        </div>
-                    </div>
-                `;
-            }, 1000);
-        }
-
-        // Actions
-        async function scanNetwork() {
-            showNotification('Starting network scan...');
-            try {
-                const response = await fetch('/ws/scan/start', { method: 'POST' });
-                const data = await response.json();
-                showNotification('Network scan initiated');
-            } catch (e) {
-                showNotification('Scan request sent');
-            }
-        }
-        
-        function exportDevices() {
-            const devices = Object.values(state.devices);
-            const json = JSON.stringify(devices, null, 2);
-            downloadJson(json, 'artemis-devices.json');
-            showNotification(`Exported ${devices.length} devices`);
-        }
-        
-        function clearConnections() { 
-            state.connections = []; 
-            renderConnections(); 
-            renderConnectionsTable(); 
-        }
-        
-        function exportTraffic() {
-            const json = JSON.stringify({
-                connections: state.connections,
-                stats: state.traffic_stats
-            }, null, 2);
-            downloadJson(json, 'artemis-traffic.json');
-        }
-        
-        function dismissAllThreats() { 
-            state.threats = []; 
-            renderThreats(); 
-            renderThreatsFull(); 
-            renderStats();
-            showNotification('All threats dismissed');
-        }
-        
-        function remediateAll() { 
-            showNotification('Auto-remediation started for all threats');
-            state.threats.forEach(t => {
-                // Queue for remediation
-            });
-        }
-        
-        async function startScan() {
-            const path = document.getElementById('scanPath').value || 'C:\\Users';
-            const deepScan = document.getElementById('scanDeep').checked;
-            const aiAnalysis = document.getElementById('scanAI').checked;
-            const recursive = document.getElementById('scanRecursive').checked;
-            
-            document.getElementById('scanStatus').textContent = 'Scanning...';
-            document.getElementById('scanResults').innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-type">Scan in progress</div>
-                    <div class="activity-details">Path: ${escapeHtml(path)}</div>
-                </div>
-            `;
-            
-            try {
-                const response = await fetch('/ws/scan/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paths: [path], deep: deepScan, ai: aiAnalysis, recursive })
-                });
-                const data = await response.json();
-                
-                document.getElementById('scanStatus').textContent = 'Scan started';
-                showNotification('File scan started');
-            } catch (e) {
-                document.getElementById('scanStatus').textContent = 'Scan queued';
-                showNotification('Scan request submitted');
-            }
-        }
-        
-        function viewHistory() { 
-            showNotification('Loading remediation history...');
-        }
-        
-        function rollbackLast() { 
-            showNotification('Rolling back last action...');
-        }
-        
-        function importRules() { 
-            // Create file input
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.yaml,.yml,.json,.yar';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    showNotification(`Importing: ${file.name}`);
-                }
-            };
-            input.click();
-        }
-        
-        function generateRule() { 
-            window.location.href = '/rules'; 
-        }
-        
-        function saveSettings() { 
-            const settings = {
-                provider: document.getElementById('settingsProvider').value,
-                model: document.getElementById('settingsModel').value,
-                scanInterval: document.getElementById('settingsScanInterval').value,
-                networkRange: document.getElementById('settingsNetworkRange').value,
-                autoQuarantine: document.getElementById('settingsAutoQuarantine').checked,
-                doubleVerify: document.getElementById('settingsDoubleVerify').checked,
-                requireApproval: document.getElementById('settingsRequireApproval').checked,
-            };
-            localStorage.setItem('artemis_settings', JSON.stringify(settings));
-            showNotification('Settings saved');
-        }
-        
-        async function scanDevice() {
-            if (!selectedDevice) return;
-            showNotification(`Scanning device ${selectedDevice}...`);
-            closeModal();
-        }
-        
-        function viewLogs() { 
-            showNotification('Opening logs...');
-        }
-        
-        function isolateDevice() { 
-            if (!selectedDevice) return;
-            if (confirm(`Isolate device ${selectedDevice}? This will block all network access.`)) {
-                showNotification(`Isolating ${selectedDevice}...`);
-            }
-        }
-        
-        function blockDevice() { 
-            if (!selectedDevice) return;
-            if (confirm(`Block device ${selectedDevice}?`)) {
-                showNotification(`Blocking ${selectedDevice}...`);
-            }
-        }
-        
-        async function viewProcesses() {
-            const procs = document.getElementById('deviceProcesses');
-            procs.innerHTML = '<div class="activity-item">Loading processes...</div>';
-            
-            try {
-                const response = await fetch('/ws/telemetry');
-                const data = await response.json();
-                
-                if (data.processes) {
-                    procs.innerHTML = data.processes.map(p => `
-                        <div class="activity-item">
-                            <div class="activity-type">${escapeHtml(p.name || 'unknown')}</div>
-                            <div class="activity-details">PID: ${p.pid} | CPU: ${p.cpu}% | Memory: ${formatBytes(p.memory || 0)}</div>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) {
-                procs.innerHTML = '<div class="activity-item">Unable to load processes</div>';
-            }
-            
-            // Switch to processes tab
-            document.querySelectorAll('#deviceTabs .tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#deviceModal .tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelector('#deviceTabs .tab[data-tab="processes"]').classList.add('active');
-            document.getElementById('tab-processes').classList.add('active');
-        }
-        
-        function viewServices() { 
-            showNotification('Loading services...');
-        }
-        
-        function viewRegistry() { 
-            showNotification('Opening registry browser...');
-        }
-        
-        function executeRemediation() { 
-            showNotification('Executing remediation...');
-            closeRemediationModal(); 
-        }
-        
-        function autoRemediate() { 
-            showNotification('Starting auto-remediation...');
-            closeRemediationModal(); 
-        }
-        
-        function viewThreatDetails(id) { 
-            const threat = state.threats.find(t => t.id === id);
-            if (threat) {
-                alert(`Threat: ${threat.title}\n\n${threat.description}\n\nSource: ${threat.source || 'Unknown'}`);
-            }
-        }
-        
-        function dismissThreat(id) { 
-            state.threats = state.threats.filter(t => t.id !== id); 
-            renderThreats(); 
-            renderThreatsFull(); 
-            renderStats(); 
-            showNotification('Threat dismissed');
-        }
-
-        // =====================================================================
-        // Pentest Functions
-        // =====================================================================
-        
-        let pentestState = {
-            running: false,
-            status: 'idle',
-            target: '',
-            progress: 0,
-            vulnerabilities: [],
-            completedAgents: [],
-            currentAgent: '',
-            currentTask: ''
-        };
 
         function showPentestModal() {
             document.getElementById('pentestModal').classList.add('active');
@@ -2316,646 +1496,274 @@
             document.getElementById('pentestModal').classList.remove('active');
         }
 
-        function closePentestVulnModal() {
-            document.getElementById('pentestVulnModal').classList.remove('active');
-        }
-
-        async function startPentest() {
-            const targetUrl = document.getElementById('pentestTargetUrl').value.trim();
-            if (!targetUrl) {
-                showNotification('Please enter a target URL', 'error');
-                return;
-            }
-
-            const payload = {
-                target_url: targetUrl,
-                repo_path: document.getElementById('pentestRepoPath').value.trim() || null,
-                model: document.getElementById('pentestModel').value,
-                provider: 'ollama',
-                login_url: document.getElementById('pentestLoginUrl').value.trim() || null,
-                username: document.getElementById('pentestUsername').value.trim() || null,
-                password: document.getElementById('pentestPassword').value || null,
-                parallel: document.getElementById('pentestParallel').checked
-            };
-
-            try {
-                const response = await fetch('/api/pentest/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    closePentestModal();
-                    pentestState.running = true;
-                    pentestState.target = targetUrl;
-                    pentestState.status = 'pre_recon';
-                    pentestState.vulnerabilities = [];
-                    updatePentestUI();
-                    showNotification('Pentest started');
-                    
-                    // Initialize debug log
-                    clearDebugLog();
-                    addDebugLog('info', '═'.repeat(50));
-                    addDebugLog('info', 'ARTEMIS PENTEST STARTED');
-                    addDebugLog('info', '═'.repeat(50));
-                    addDebugLog('info', `Target: ${targetUrl}`);
-                    addDebugLog('info', `Model: ${payload.model}`);
-                    addDebugLog('info', `Mode: ${payload.repo_path ? 'Whitebox' : 'Blackbox'}`);
-                    addDebugLog('info', `Parallel: ${payload.parallel ? 'Yes' : 'No'}`);
-                    addDebugLog('info', '─'.repeat(50));
-                    
-                    // Start polling for status
-                    pollPentestStatus();
-                } else {
-                    showNotification(data.detail || 'Failed to start pentest', 'error');
-                }
-            } catch (e) {
-                showNotification('Failed to start pentest: ' + e.message, 'error');
+        function selectDevice(ip) {
+            state.selectedDevice = state.devices.find(d => d.ip === ip);
+            if (state.selectedDevice) {
+                document.getElementById('modalDeviceName').textContent = state.selectedDevice.hostname || state.selectedDevice.ip;
+                document.getElementById('deviceModal').classList.add('active');
             }
         }
 
-        async function cancelPentest() {
-            if (!confirm('Are you sure you want to cancel the pentest?')) return;
-
-            try {
-                const response = await fetch('/api/pentest/cancel', { method: 'POST' });
-                const data = await response.json();
-                
-                if (data.success) {
-                    pentestState.running = false;
-                    pentestState.status = 'cancelled';
-                    updatePentestUI();
-                    showNotification('Pentest cancelled');
-                }
-            } catch (e) {
-                showNotification('Failed to cancel pentest', 'error');
-            }
-        }
-
-        async function pollPentestStatus() {
-            if (!pentestState.running) return;
-
-            try {
-                const response = await fetch('/api/pentest/status');
-                const data = await response.json();
-
-                pentestState.running = data.running;
-                pentestState.status = data.status;
-                pentestState.progress = data.progress_percent || 0;
-                pentestState.currentAgent = data.current_agent || '';
-                pentestState.currentTask = data.current_task || '';
-                pentestState.completedAgents = data.completed_agents || [];
-                
-                // Get vulnerabilities
-                const vulnResponse = await fetch('/api/pentest/vulnerabilities');
-                const vulnData = await vulnResponse.json();
-                pentestState.vulnerabilities = vulnData.vulnerabilities || [];
-
-                updatePentestUI();
-
-                // Continue polling if still running
-                if (data.running) {
-                    setTimeout(pollPentestStatus, 2000);
-                } else if (data.status === 'complete') {
-                    showNotification('Pentest completed!', 'success');
-                }
-            } catch (e) {
-                console.error('Pentest status poll failed:', e);
-                setTimeout(pollPentestStatus, 5000);
-            }
-        }
-
-        function updatePentestUI() {
-            const idleState = document.getElementById('pentestIdleState');
-            const runningState = document.getElementById('pentestRunningState');
-            const statusBadge = document.getElementById('pentestStatusBadge');
-            const statusText = document.getElementById('pentestStatusText');
-            const statusDot = statusBadge.querySelector('.status-dot');
-
-            if (pentestState.running || pentestState.status !== 'idle') {
-                idleState.style.display = 'none';
-                runningState.style.display = 'block';
-                
-                // Update status
-                const statusMap = {
-                    'idle': 'Idle',
-                    'pre_recon': 'Pre-Recon',
-                    'recon': 'Reconnaissance',
-                    'vuln_analysis': 'Vuln Analysis',
-                    'exploitation': 'Exploitation',
-                    'reporting': 'Reporting',
-                    'complete': 'Complete',
-                    'failed': 'Failed',
-                    'cancelled': 'Cancelled'
-                };
-                statusText.textContent = statusMap[pentestState.status] || pentestState.status;
-                
-                // Update status dot color
-                statusDot.className = 'status-dot';
-                if (pentestState.running) {
-                    statusDot.classList.add('online');
-                } else if (pentestState.status === 'complete') {
-                    statusDot.classList.add('online');
-                } else if (pentestState.status === 'failed') {
-                    statusDot.classList.add('danger');
-                } else {
-                    statusDot.classList.add('warning');
-                }
-
-                // Update progress
-                document.getElementById('pentestTarget').textContent = pentestState.target;
-                document.getElementById('pentestProgress').textContent = pentestState.progress.toFixed(1) + '%';
-                document.getElementById('pentestProgressBar').style.width = pentestState.progress + '%';
-                document.getElementById('pentestVulnCount').textContent = pentestState.vulnerabilities.length;
-                document.getElementById('pentestCurrentAgent').textContent = pentestState.currentAgent || '-';
-                document.getElementById('pentestCurrentTask').textContent = pentestState.currentTask || '';
-
-                // Update agent badges
-                renderPentestAgents();
-                
-                // Update vulnerability list
-                renderPentestVulns();
-            } else {
-                idleState.style.display = 'block';
-                runningState.style.display = 'none';
-                statusText.textContent = 'Idle';
-                statusDot.className = 'status-dot';
-            }
-        }
-
-        function renderPentestAgents() {
-            const container = document.getElementById('pentestAgentList');
-            const allAgents = [
-                'pre-recon', 'recon',
-                'injection-vuln', 'xss-vuln', 'auth-vuln', 'authz-vuln', 'ssrf-vuln',
-                'injection-exploit', 'xss-exploit', 'auth-exploit', 'authz-exploit', 'ssrf-exploit',
-                'report'
-            ];
-
-            container.innerHTML = allAgents.map(agent => {
-                const isCompleted = pentestState.completedAgents.includes(agent);
-                const isCurrent = pentestState.currentAgent === agent;
-                
-                let className = 'device-type-badge';
-                let icon = '';
-                
-                if (isCompleted) {
-                    className += ' desktop';
-                    icon = '&#9989; ';
-                } else if (isCurrent) {
-                    className += ' server';
-                    icon = '&#9881; ';
-                }
-                
-                return `<span class="${className}">${icon}${agent}</span>`;
-            }).join('');
-        }
-
-        function renderPentestVulns() {
-            const container = document.getElementById('pentestVulnList');
-            const badge = document.getElementById('pentestVulnBadge');
-            
-            badge.textContent = pentestState.vulnerabilities.length;
-
-            if (pentestState.vulnerabilities.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">&#9989;</div>
-                        <div>No vulnerabilities found yet</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const severityColors = {
-                'critical': 'var(--critical)',
-                'high': 'var(--danger)',
-                'medium': 'var(--warning)',
-                'low': 'var(--success)',
-                'info': 'var(--text-muted)'
-            };
-
-            container.innerHTML = pentestState.vulnerabilities.map((vuln, i) => `
-                <div class="activity-item" style="cursor: pointer;" onclick="showPentestVulnDetail(${i})">
-                    <div class="activity-type" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="color: ${severityColors[vuln.severity] || 'white'}; font-weight: bold;">
-                            [${(vuln.severity || 'medium').toUpperCase()}]
-                        </span>
-                        ${escapeHtml(vuln.title || 'Unknown')}
-                        ${vuln.exploited ? '<span style="color: var(--danger);">&#9888; EXPLOITED</span>' : ''}
-                    </div>
-                    <div class="activity-details">
-                        ${escapeHtml(vuln.type || 'unknown')} | ${escapeHtml(vuln.endpoint || 'N/A')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function showPentestVulnDetail(index) {
-            const vuln = pentestState.vulnerabilities[index];
-            if (!vuln) return;
-
-            document.getElementById('pentestVulnTitle').textContent = vuln.title || 'Vulnerability Details';
-            
-            const severityColors = {
-                'critical': 'var(--critical)',
-                'high': 'var(--danger)',
-                'medium': 'var(--warning)',
-                'low': 'var(--success)',
-                'info': 'var(--text-muted)'
-            };
-
-            document.getElementById('pentestVulnDetails').innerHTML = `
-                <div style="margin-bottom: 1rem;">
-                    <span style="background: ${severityColors[vuln.severity] || 'gray'}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: bold;">
-                        ${(vuln.severity || 'MEDIUM').toUpperCase()}
-                    </span>
-                    <span style="background: var(--bg-tertiary); padding: 0.25rem 0.75rem; border-radius: 4px; margin-left: 0.5rem;">
-                        ${escapeHtml(vuln.type || 'unknown')}
-                    </span>
-                    ${vuln.exploited ? '<span style="background: var(--danger); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; margin-left: 0.5rem;">EXPLOITED</span>' : ''}
-                </div>
-
-                <table style="width: 100%; margin-bottom: 1rem;">
-                    <tr>
-                        <td style="padding: 0.5rem; color: var(--text-muted); width: 120px;">Endpoint</td>
-                        <td style="padding: 0.5rem;"><code>${escapeHtml(vuln.endpoint || 'N/A')}</code></td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 0.5rem; color: var(--text-muted);">Parameter</td>
-                        <td style="padding: 0.5rem;"><code>${escapeHtml(vuln.parameter || 'N/A')}</code></td>
-                    </tr>
-                </table>
-
-                <h4 style="margin: 1rem 0 0.5rem;">Description</h4>
-                <p style="color: var(--text-secondary);">${escapeHtml(vuln.description || 'No description available.')}</p>
-
-                ${vuln.payload ? `
-                    <h4 style="margin: 1rem 0 0.5rem;">Payload</h4>
-                    <pre style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;"><code>${escapeHtml(vuln.payload)}</code></pre>
-                ` : ''}
-
-                ${vuln.proof ? `
-                    <h4 style="margin: 1rem 0 0.5rem;">Proof of Exploitation</h4>
-                    <pre style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;"><code>${escapeHtml(vuln.proof)}</code></pre>
-                ` : ''}
-            `;
-
-            document.getElementById('pentestVulnModal').classList.add('active');
-        }
-
+        // Tools Status
         async function refreshToolsStatus() {
             const container = document.getElementById('toolsStatusGrid');
-            container.innerHTML = '<span style="color: var(--text-muted);">Checking tools...</span>';
-            
             try {
                 const response = await fetch('/api/pentest/tools');
                 const data = await response.json();
                 
-                const toolIcons = {
-                    nmap: '&#128270;',
-                    subfinder: '&#127760;',
-                    httpx: '&#128279;',
-                    katana: '&#128375;',
-                    ffuf: '&#128269;',
-                    gobuster: '&#128193;',
-                    sqlmap: '&#128187;',
-                };
-                
                 container.innerHTML = Object.entries(data.tools).map(([name, info]) => {
-                    const available = info.available;
-                    const icon = toolIcons[name] || '&#128295;';
-                    const color = available ? 'var(--success)' : 'var(--text-muted)';
-                    const bgColor = available ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-tertiary)';
-                    
-                    return `<span style="
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 0.25rem;
-                        padding: 0.25rem 0.5rem;
-                        border-radius: 4px;
-                        font-size: 0.75rem;
-                        background: ${bgColor};
-                        color: ${color};
-                        border: 1px solid ${available ? 'var(--success)' : 'var(--border)'};
-                    " title="${info.path || 'Not installed'}">${icon} ${name}</span>`;
-                }).join('');
-                
-                // Add summary
-                container.innerHTML += `<span style="
-                    color: var(--text-muted);
-                    font-size: 0.75rem;
-                    margin-left: 0.5rem;
-                ">${data.available_count}/${data.total_count} available</span>`;
-                
+                    const cls = info.available ? 'available' : 'missing';
+                    return `<span class="tool-badge ${cls}" title="${info.path || 'Not installed'}">${name}</span>`;
+                }).join('') + `<span style="color: var(--text-muted); font-size: 0.7rem; margin-left: 0.5rem;">${data.available_count}/${data.total_count}</span>`;
             } catch (e) {
-                container.innerHTML = '<span style="color: var(--danger);">Failed to load tools</span>';
+                container.innerHTML = '<span style="color: var(--danger); font-size: 0.8rem;">Failed to load</span>';
             }
         }
 
-        // Load tools status on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (document.getElementById('toolsStatusGrid')) {
-                refreshToolsStatus();
+        // Pentest
+        async function startPentest() {
+            const targetUrl = document.getElementById('pentestTargetUrl').value;
+            if (!targetUrl) {
+                alert('Please enter a target URL');
+                return;
             }
-        });
-
-        async function viewPentestHistory() {
+            
+            closePentestModal();
+            clearDebugLog();
+            
             try {
-                const response = await fetch('/api/pentest/sessions');
-                const data = await response.json();
+                const response = await fetch('/api/pentest/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target_url: targetUrl,
+                        scope: document.getElementById('pentestScope').value,
+                        enable_tools: document.getElementById('pentestTools').checked,
+                        enable_exploitation: document.getElementById('pentestExploit').checked,
+                        generate_report: document.getElementById('pentestReport').checked
+                    })
+                });
                 
-                if (data.sessions && data.sessions.length > 0) {
-                    const list = data.sessions.map(s => 
-                        `${s.config?.target_url || 'Unknown'} - ${s.state?.status || 'unknown'} (${s.summary?.total_vulnerabilities || 0} vulns)`
-                    ).join('\n');
-                    alert('Pentest History:\n\n' + list);
-                } else {
-                    showNotification('No pentest history found');
+                const data = await response.json();
+                if (data.session_id) {
+                    state.pentestSessionId = data.session_id;
+                    state.pentestRunning = true;
+                    document.getElementById('pentestIdleState').style.display = 'none';
+                    document.getElementById('pentestRunningState').style.display = 'block';
+                    document.getElementById('pentestTarget').textContent = targetUrl;
+                    document.getElementById('pentestStatusText').textContent = 'Running';
+                    document.getElementById('pentestStatusBadge').querySelector('.status-dot').className = 'status-dot warning';
+                    document.getElementById('debugLiveBadge').style.display = 'flex';
+                    pollPentestStatus();
                 }
             } catch (e) {
-                showNotification('Failed to load history', 'error');
+                appendDebugLog('error', 'Failed to start pentest: ' + e.message);
             }
         }
 
-        // Handle pentest WebSocket updates
-        function handlePentestUpdate(data) {
-            pentestState.running = data.status !== 'complete' && data.status !== 'failed' && data.status !== 'idle';
-            pentestState.status = data.status;
-            pentestState.progress = data.progress_percent || 0;
-            pentestState.currentAgent = data.current_agent || '';
-            pentestState.currentTask = data.current_task || '';
-            pentestState.completedAgents = data.completed_agents || [];
-            updatePentestUI();
+        async function cancelPentest() {
+            if (state.pentestSessionId) {
+                await fetch('/api/pentest/cancel', { method: 'POST' });
+                state.pentestRunning = false;
+                document.getElementById('pentestIdleState').style.display = 'block';
+                document.getElementById('pentestRunningState').style.display = 'none';
+                document.getElementById('pentestStatusText').textContent = 'Cancelled';
+                document.getElementById('debugLiveBadge').style.display = 'none';
+            }
         }
 
-        function handlePentestVulnerability(vuln) {
-            pentestState.vulnerabilities.push(vuln);
-            renderPentestVulns();
-            addDebugLog('vuln', `[VULN] ${vuln.severity?.toUpperCase() || 'MEDIUM'}: ${vuln.title || 'Unknown'}`);
-        }
-
-        function handlePentestLog(log) {
-            addDebugLog(log.level || 'info', log.message || log);
-        }
-
-        // =====================================================================
-        // Debug Log Functions
-        // =====================================================================
-
-        let debugLogs = [];
-        let debugPanelCollapsed = false;
-        let debugAutoScroll = true;
-
-        function addDebugLog(level, message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = { timestamp, level, message };
-            debugLogs.push(entry);
+        async function pollPentestStatus() {
+            if (!state.pentestRunning) return;
             
-            // Keep last 500 entries
-            if (debugLogs.length > 500) {
-                debugLogs = debugLogs.slice(-500);
+            try {
+                const [statusRes, vulnsRes] = await Promise.all([
+                    fetch('/api/pentest/status'),
+                    fetch('/api/pentest/vulnerabilities')
+                ]);
+                
+                const status = await statusRes.json();
+                const vulns = await vulnsRes.json();
+                
+                updatePentestUI(status, vulns.vulnerabilities || []);
+                
+                if (status.status === 'running') {
+                    setTimeout(pollPentestStatus, 2000);
+                } else {
+                    state.pentestRunning = false;
+                    document.getElementById('debugLiveBadge').style.display = 'none';
+                    if (status.status === 'completed') {
+                        document.getElementById('pentestStatusText').textContent = 'Completed';
+                        document.getElementById('pentestStatusBadge').querySelector('.status-dot').className = 'status-dot online';
+                    }
+                }
+            } catch (e) {
+                setTimeout(pollPentestStatus, 5000);
+            }
+        }
+
+        function updatePentestUI(status, vulns) {
+            document.getElementById('pentestProgress').textContent = Math.round(status.progress || 0) + '%';
+            document.getElementById('pentestProgressBar').style.width = (status.progress || 0) + '%';
+            document.getElementById('pentestVulnCount').textContent = vulns.length;
+            document.getElementById('pentestVulnBadge').textContent = vulns.length;
+            
+            if (status.current_phase) {
+                document.getElementById('pentestCurrentAgent').textContent = status.current_phase;
             }
             
-            renderDebugLog();
-            
-            // Show live badge
-            const liveBadge = document.getElementById('debugLiveBadge');
-            if (liveBadge) liveBadge.style.display = 'flex';
+            // Update vulnerability list
+            const vulnContainer = document.getElementById('pentestVulnList');
+            if (vulns.length === 0) {
+                vulnContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">[OK]</div><div>No vulnerabilities found yet</div></div>';
+            } else {
+                vulnContainer.innerHTML = vulns.map(v => `
+                    <div class="threat-item ${v.severity || 'medium'}">
+                        <div class="threat-header">
+                            <span class="threat-title">${v.title || v.type}</span>
+                            <span class="threat-badge ${v.severity || 'medium'}">${v.severity || 'medium'}</span>
+                        </div>
+                        <div class="threat-description">${v.description || v.endpoint || ''}</div>
+                    </div>
+                `).join('');
+            }
         }
 
-        function renderDebugLog() {
-            const container = document.getElementById('pentestDebugLog');
-            if (!container) return;
-
-            const levelColors = {
-                'info': 'var(--text-secondary)',
-                'debug': 'var(--text-muted)',
-                'warn': 'var(--warning)',
-                'error': 'var(--danger)',
-                'success': 'var(--success)',
-                'vuln': 'var(--danger)',
-                'agent': 'var(--accent)',
-                'llm': 'var(--purple)',
-                'http': 'var(--blue)',
-                'phase': 'var(--pink)'
-            };
-
-            container.innerHTML = debugLogs.map(entry => {
-                const color = levelColors[entry.level] || levelColors.info;
-                const levelTag = entry.level.toUpperCase().padEnd(7);
-                return `<div style="margin-bottom: 2px;"><span style="color: var(--text-muted);">${entry.timestamp}</span> <span style="color: ${color};">[${levelTag}]</span> ${escapeHtml(entry.message)}</div>`;
-            }).join('');
-
-            // Auto-scroll to bottom
-            if (debugAutoScroll) {
-                container.scrollTop = container.scrollHeight;
-            }
+        // Debug Log
+        function appendDebugLog(level, message) {
+            const log = document.getElementById('pentestDebugLog');
+            const levelClass = {
+                phase: 'log-phase',
+                agent: 'log-agent',
+                llm: 'log-llm',
+                http: 'log-http',
+                vuln: 'log-vuln',
+                success: 'log-success',
+                error: 'log-error',
+                warn: 'log-warn'
+            }[level] || '';
+            
+            const time = new Date().toLocaleTimeString();
+            const entry = `<span class="${levelClass}">[${time}] [${level.toUpperCase()}] ${message}</span>\n`;
+            state.debugLogs.push({ time, level, message });
+            log.innerHTML += entry;
+            log.scrollTop = log.scrollHeight;
         }
 
         function clearDebugLog() {
-            debugLogs = [];
-            const container = document.getElementById('pentestDebugLog');
-            if (container) {
-                container.innerHTML = '<span style="color: var(--text-muted);">[Log cleared]</span>';
-            }
-            const liveBadge = document.getElementById('debugLiveBadge');
-            if (liveBadge) liveBadge.style.display = 'none';
-        }
-
-        function toggleDebugPanel() {
-            const body = document.getElementById('pentestDebugBody');
-            const icon = document.getElementById('debugToggleIcon');
-            
-            debugPanelCollapsed = !debugPanelCollapsed;
-            
-            if (debugPanelCollapsed) {
-                body.style.display = 'none';
-                icon.innerHTML = '&#9654;'; // Right arrow
-            } else {
-                body.style.display = 'block';
-                icon.innerHTML = '&#9660;'; // Down arrow
-                renderDebugLog();
-            }
+            document.getElementById('pentestDebugLog').innerHTML = '<span style="color: var(--text-muted);">[Log cleared]</span>\n';
+            state.debugLogs = [];
         }
 
         function downloadDebugLog() {
-            const content = debugLogs.map(e => `${e.timestamp} [${e.level.toUpperCase()}] ${e.message}`).join('\n');
+            const content = state.debugLogs.map(l => `[${l.time}] [${l.level}] ${l.message}`).join('\n');
             const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `pentest-debug-${Date.now()}.log`;
             a.click();
-            URL.revokeObjectURL(url);
         }
 
-        // Enhanced pentest update handler with logging
-        const originalHandlePentestUpdate = handlePentestUpdate;
-        handlePentestUpdate = function(data) {
-            // Log phase changes
-            if (data.status && data.status !== pentestState.status) {
-                addDebugLog('phase', `Phase changed: ${pentestState.status || 'idle'} -> ${data.status}`);
-            }
-            
-            // Log agent changes
-            if (data.current_agent && data.current_agent !== pentestState.currentAgent) {
-                addDebugLog('agent', `Agent started: ${data.current_agent}`);
-            }
-            
-            // Log task updates
-            if (data.current_task && data.current_task !== pentestState.currentTask) {
-                addDebugLog('info', data.current_task);
-            }
-            
-            // Log completed agents
-            if (data.completed_agents) {
-                const newCompleted = data.completed_agents.filter(a => !pentestState.completedAgents.includes(a));
-                newCompleted.forEach(agent => {
-                    addDebugLog('success', `Agent completed: ${agent}`);
-                });
-            }
-            
-            // Call original handler
-            pentestState.running = data.status !== 'complete' && data.status !== 'failed' && data.status !== 'idle';
-            pentestState.status = data.status;
-            pentestState.progress = data.progress_percent || 0;
-            pentestState.currentAgent = data.current_agent || '';
-            pentestState.currentTask = data.current_task || '';
-            pentestState.completedAgents = data.completed_agents || [];
-            updatePentestUI();
-        };
-        
-        // Helper functions
-        function showNotification(message, type = 'info') {
-            // Create toast container if it doesn't exist
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toast-container';
-                container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;';
-                document.body.appendChild(container);
-            }
-            
-            const toast = document.createElement('div');
-            const colors = {
-                info: 'var(--accent)',
-                success: 'var(--success)',
-                warning: 'var(--warning)',
-                error: 'var(--danger)'
-            };
-            toast.style.cssText = `
-                background: var(--bg-secondary);
-                border: 1px solid ${colors[type] || colors.info};
-                border-left: 4px solid ${colors[type] || colors.info};
-                color: var(--text-primary);
-                padding: 12px 16px;
-                border-radius: 8px;
-                font-size: 14px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                animation: slideIn 0.3s ease;
-            `;
-            toast.textContent = message;
-            container.appendChild(toast);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-            
-            console.log('[Artemis]', message);
-        }
-        
-        function downloadJson(content, filename) {
-            const blob = new Blob([content], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
+        function toggleDebugPanel() {
+            const body = document.getElementById('pentestDebugBody');
+            const icon = document.getElementById('debugToggleIcon');
+            state.debugExpanded = !state.debugExpanded;
+            body.style.display = state.debugExpanded ? 'block' : 'none';
+            icon.textContent = state.debugExpanded ? '[-]' : '[+]';
         }
 
-        // Utilities
-        function getDeviceIcon(type) {
-            const icons = {
-                router: '&#128422;',
-                desktop: '&#128187;',
-                laptop: '&#128187;',
-                server: '&#128421;',
-                mobile: '&#128241;',
-                smartphone: '&#128241;',
-                tv: '&#128250;',
-                smart_device: '&#128161;',
-                unknown: '&#128430;'
-            };
-            return icons[type] || icons.unknown;
-        }
-
-        function formatBytes(bytes) {
-            if (!bytes || bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        function formatTime(ts) {
-            if (!ts) return '-';
-            return new Date(ts).toLocaleTimeString();
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function updateStatus(online) {
-            const dot = document.getElementById('agentDot');
-            const text = document.getElementById('agentStatusText');
-            dot.className = 'status-dot ' + (online ? 'online' : 'danger');
-            text.textContent = online ? 'Monitoring' : 'Disconnected';
-        }
-
+        // Topology
         function refreshTopology() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ command: 'get_state' }));
+            const canvas = document.getElementById('topology');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (state.devices.length === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('Scanning for devices...', canvas.width / 2, canvas.height / 2);
+                return;
             }
+            
+            // Draw devices
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+            
+            // Draw router at center
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw devices around
+            state.devices.forEach((device, i) => {
+                const angle = (i / state.devices.length) * Math.PI * 2 - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                // Line to center
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                // Device node
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Label
+                ctx.fillStyle = '#a0a0a0';
+                ctx.font = '11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(device.ip.split('.').pop(), x, y + 22);
+            });
         }
 
-        // Window resize
-        window.addEventListener('resize', () => renderTopology());
+        // Placeholder functions
+        function scanNetwork() { console.log('Scan network'); }
+        function exportDevices() { console.log('Export devices'); }
+        function exportTraffic() { console.log('Export traffic'); }
+        function clearConnections() { state.connections = []; updateConnectionsList(); }
+        function dismissAllThreats() { state.threats = []; updateThreatsList(); }
+        function remediateAll() { console.log('Remediate all'); }
+        function startScan() { console.log('Start scan'); }
+        function viewHistory() { console.log('View history'); }
+        function rollbackLast() { console.log('Rollback last'); }
+        function viewPentestHistory() { console.log('Pentest history'); }
+        function importRules() { console.log('Import rules'); }
+        function generateRule() { console.log('Generate rule'); }
+        function saveSettings() { console.log('Save settings'); }
+        function analyzeDevice() { console.log('Analyze device'); }
 
-        // Initialize
+        // Init
         document.addEventListener('DOMContentLoaded', () => {
-            initNavigation();
-            initModalTabs();
-            initTopologyClicks();
-            connect();
+            connectWS();
+            refreshTopology();
+            refreshToolsStatus();
             
-            // Re-render topology on window resize (debounced)
-            let resizeTimeout;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(renderTopology, 100);
-            });
+            window.addEventListener('resize', refreshTopology);
+            
+            // Poll for updates
+            setInterval(async () => {
+                try {
+                    const res = await fetch('/api/devices');
+                    const data = await res.json();
+                    state.devices = data.devices || [];
+                    updateDevicesList();
+                    refreshTopology();
+                } catch (e) {}
+            }, 30000);
         });
-
-        // Fallback polling
-        setInterval(() => {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                fetch('/ws/state').then(r => r.json()).then(data => {
-                    state = data;
-                    renderAll();
-                }).catch(() => {});
-            }
-        }, 5000);
     </script>
 </body>
 </html>
