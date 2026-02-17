@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="Project Artemis Logo" width="200">
 </p>
 
-# 🛡️ Project Artemis
+# Project Artemis
 
 > **Hello everyone, Welcome to Project Artemis.**
 >
@@ -10,7 +10,7 @@
 >
 > Project Artemis is **not intended to replace a qualified cybersecurity team** or a comprehensive security program. Instead, it is designed to serve as an accessible, supportive layer of protection, providing meaningful visibility, quality logging, and actionable information that can assist cybersecurity professionals when deeper analysis or intervention is required. Rather than relying on end users to describe what they believe they saw, Artemis aims to capture and present clear, structured data.
 >
-> The long-term vision is to create a secure, locally running tool that performs foundational cybersecurity functions, offers basic remediation capabilities, and strengthens defensive posture in a responsible and controlled manner. This solution is meant for those who often go underserved—small charities, resource-constrained organizations, and even home users who need practical protection without enterprise-level budgets.
+> The long-term vision is to create a secure, locally running tool that performs foundational cybersecurity functions, offers basic remediation capabilities, and strengthens defensive posture in a responsible and controlled manner. This solution is meant for those who often go underserved — small charities, resource-constrained organizations, and even home users who need practical protection without enterprise-level budgets.
 >
 > Our priorities are **simplicity, reliability, and safety**. The platform should be intuitive enough for non-technical users while still generating valuable technical insight. It should empower users to improve their security posture without overwhelming them or requiring significant financial investment in audits and remediation they may not fully understand.
 >
@@ -30,66 +30,66 @@ A comprehensive cybersecurity toolkit combining detection engineering, endpoint 
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <details>
-<summary><b>🖥️ Control Center</b> — Main dashboard overview</summary>
+<summary><b>Control Center</b> — Main dashboard overview</summary>
 <p align="center">
   <img src="assets/screenshots/Control_center.png" alt="Control Center" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>🔍 EDR Module</b> — Endpoint detection & response</summary>
+<summary><b>EDR Module</b> — Endpoint detection and response</summary>
 <p align="center">
   <img src="assets/screenshots/EDR.png" alt="EDR Module" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>🌐 Network Traffic</b> — Real-time connection monitoring</summary>
+<summary><b>Network Traffic</b> — Real-time connection monitoring</summary>
 <p align="center">
   <img src="assets/screenshots/Network_Traffic.png" alt="Network Traffic" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>💻 Endpoints</b> — Device discovery and management</summary>
+<summary><b>Endpoints</b> — Device discovery and management</summary>
 <p align="center">
   <img src="assets/screenshots/Endpoints.png" alt="Endpoints" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>⚠️ Threat Detection</b> — Active threat monitoring</summary>
+<summary><b>Threat Detection</b> — Active threat monitoring</summary>
 <p align="center">
   <img src="assets/screenshots/Threat_Detection.png" alt="Threat Detection" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>📋 Detection Ruleset</b> — AI-generated security rules</summary>
+<summary><b>Detection Ruleset</b> — AI-generated security rules</summary>
 <p align="center">
   <img src="assets/screenshots/Detection_Rulset.png" alt="Detection Ruleset" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>📁 File Scanner</b> — Malware and file analysis</summary>
+<summary><b>File Scanner</b> — Malware and file analysis</summary>
 <p align="center">
   <img src="assets/screenshots/File_Scanner.png" alt="File Scanner" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>🛠️ Remediation Center</b> — Response actions and quarantine</summary>
+<summary><b>Remediation Center</b> — Response actions and quarantine</summary>
 <p align="center">
   <img src="assets/screenshots/Remediation_Center.png" alt="Remediation Center" width="800">
 </p>
 </details>
 
 <details>
-<summary><b>🔴 Red Team</b> — Penetration testing module</summary>
+<summary><b>Red Team</b> — Penetration testing module</summary>
 <p align="center">
   <img src="assets/screenshots/Red_Team.png" alt="Red Team" width="800">
 </p>
@@ -97,15 +97,15 @@ A comprehensive cybersecurity toolkit combining detection engineering, endpoint 
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎯 Detection Engineering
-- **Natural language → detection rules** — Describe a threat, get deployable rules
+### Detection Engineering
+- **Natural language to detection rules** — Describe a threat, get deployable rules
 - **Multiple formats** — Sigma, YARA, Splunk SPL, KQL, Snort/Suricata
 - **MITRE ATT&CK mapping** — Automatic technique tagging
 - **Rule validation** — Syntax and logic checks
 
-### 🔍 EDR (Endpoint Detection & Response)
+### EDR (Endpoint Detection & Response)
 - **Process monitoring** — Real-time process creation/termination tracking
 - **Sysmon integration** — Parse all 29 event types with threat detection
 - **Threat intelligence** — 6 free feeds, 27,000+ IoCs (IPs, hashes)
@@ -113,25 +113,25 @@ A comprehensive cybersecurity toolkit combining detection engineering, endpoint 
 - **MITRE ATT&CK heatmap** — Visual coverage across tactics
 - **Threat hunting** — Query syntax with field:value operators
 
-### 🌐 Network Security
+### Network Security
 - **Device discovery** — ARP scanning with MAC vendor lookup (2000+ OUIs)
 - **Connection monitoring** — Real-time network connections via psutil
 - **Traffic analysis** — Bandwidth monitoring and anomaly detection
 - **Smart classification** — Automatic device type detection
 
-### 🤖 AI Analysis
+### AI Analysis
 - **Local inference** — Ollama with DeepSeek/Qwen (no API keys needed)
 - **Cloud providers** — Anthropic Claude, OpenAI GPT-4
 - **Security analysis** — AI-powered threat assessment and recommendations
 
-### 📊 SOC Dashboard
+### SOC Dashboard
 - **Real-time monitoring** — Device, connection, and threat views
 - **Security posture** — Risk scoring (0-100), A-F grades
 - **Unified timeline** — All security events in one view
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -143,8 +143,8 @@ A comprehensive cybersecurity toolkit combining detection engineering, endpoint 
 
 ```bash
 # Clone the repository
-git clone https://github.com/whisperrr-ux/project-artemis.git
-cd project-artemis
+git clone https://github.com/bytecreeper/Project_artemis_EDR.git
+cd Project_artemis_EDR
 
 # Create virtual environment (recommended)
 python -m venv venv
@@ -181,7 +181,7 @@ python -m uvicorn src.artemis.web.app:app --host 127.0.0.1 --port 8000
 
 ---
 
-## 🔧 Detailed Setup
+## Detailed Setup
 
 ### Local AI (Recommended)
 
@@ -213,7 +213,7 @@ Sysmon provides deep Windows telemetry for the EDR module:
 
 ```powershell
 # Run as Administrator
-cd project-artemis
+cd Project_artemis_EDR
 
 # Install Sysmon with our config
 .\tools\Sysmon\Sysmon64.exe -accepteula -i config\sysmon-config.xml
@@ -236,7 +236,7 @@ artemis edr update-feeds
 
 ---
 
-## 📖 Usage
+## Usage
 
 ### CLI - Detection Engineering
 
@@ -299,10 +299,10 @@ asyncio.run(main())
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-project-artemis/
+Project_artemis_EDR/
 ├── src/artemis/
 │   ├── core.py              # Main Artemis engine
 │   ├── cli.py               # Click CLI
@@ -347,7 +347,7 @@ project-artemis/
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
 ### What This Tool Does
 - Monitors YOUR network for threats
@@ -367,7 +367,7 @@ project-artemis/
 
 ---
 
-## 🛠️ Development
+## Development
 
 ```bash
 # Install dev dependencies
@@ -399,7 +399,7 @@ Please ensure:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - [EDR Module Guide](docs/EDR_MODULE.md)
 - [Dashboard Improvements](docs/DASHBOARD_IMPROVEMENTS.md)
@@ -407,7 +407,7 @@ Please ensure:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Sigma/YARA/SPL rule generation
 - [x] MITRE ATT&CK mapping
@@ -425,13 +425,13 @@ Please ensure:
 
 ---
 
-## 📄 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Sigma](https://github.com/SigmaHQ/sigma) — Detection rule format
 - [Sysmon](https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon) — Windows telemetry
