@@ -2677,7 +2677,7 @@
                     connections: suspiciousConns.slice(0, 10),
                     threats: state.threats.slice(0, 5),
                     devices: state.devices.slice(0, 20),
-                    model: "deepseek-r1:70b"
+                    model: "qwen3:14b"
                 };
                 
                 // Only call AI if there's something interesting
@@ -2689,7 +2689,7 @@
                     const miniProgress = document.createElement('div');
                     miniProgress.id = 'auto-ai-progress';
                     miniProgress.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin: 0.375rem; font-size: 0.75rem; color: var(--accent);';
-                    miniProgress.innerHTML = '<span class="ai-spinner" style="width: 12px; height: 12px;"></span> Auto-analyzing (deepseek-r1:70b)...';
+                    miniProgress.innerHTML = '<span class="ai-spinner" style="width: 12px; height: 12px;"></span> Auto-analyzing (qwen3:14b)...';
                     
                     if (aiList.querySelector('.empty-state')) {
                         aiList.innerHTML = '';
@@ -2810,7 +2810,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
             
             debugLog('ai', '═══════════════════════════════════════');
             debugLog('ai', 'Starting manual AI security analysis');
-            debugLog('info', `Model: deepseek-r1:70b`);
+            debugLog('info', `Model: qwen3:14b`);
             
             // Build progress UI
             const progressId = 'ai-progress-' + startTime;
@@ -2818,7 +2818,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 <div class="ai-progress-container" id="${progressId}">
                     <div class="ai-progress-header">
                         <span class="ai-spinner"></span>
-                        <span>DeepSeek R1 Security Analysis</span>
+                        <span>Qwen3 Security Analysis</span>
                     </div>
                     <div class="ai-progress-log" id="${progressId}-log">
                     </div>
@@ -2875,7 +2875,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     connections: state.connections.slice(0, 20),
                     threats: state.threats,
                     devices: state.devices,
-                    model: "deepseek-r1:70b"
+                    model: "qwen3:14b"  // Faster model - deepseek-r1:70b times out on cold start
                 };
                 
                 const payloadSize = JSON.stringify(payload).length;
@@ -2888,7 +2888,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 setProgress(20);
                 
                 // Step 2: Sending to AI
-                logStep('◉', 'Sending to DeepSeek R1:70b');
+                logStep('◉', 'Sending to Qwen3:14b');
                 setProgress(30);
                 
                 debugLog('ai', 'Sending request to /api/ai/analyze...');
