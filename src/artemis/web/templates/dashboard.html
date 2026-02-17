@@ -1499,14 +1499,59 @@
                 return;
             }
             
-            container.innerHTML = state.connections.slice(0, 20).map(conn => `
-                <div class="conn-row">
+            container.innerHTML = state.connections.slice(0, 20).map((conn, i) => `
+                <div class="conn-row" style="cursor: pointer;" onclick="analyzeConnection(${i})" title="Click to analyze">
                     <span class="conn-process">${conn.process || '-'}</span>
                     <span class="conn-remote">${conn.remote || '-'}</span>
                     <span class="conn-port">${conn.port || '-'}</span>
                     <span class="conn-state ${conn.state?.toLowerCase() || ''}">${conn.state || '-'}</span>
                 </div>
             `).join('');
+        }
+        
+        async function analyzeConnection(index) {
+            const conn = state.connections[index];
+            if (!conn) return;
+            
+            const aiList = document.getElementById('aiList');
+            if (aiList.querySelector('.empty-state')) {
+                aiList.innerHTML = '';
+            }
+            
+            // Show analyzing state
+            const tempId = 'analyzing-' + Date.now();
+            aiList.insertAdjacentHTML('afterbegin', `
+                <div class="ai-panel" style="margin: 0.375rem;" id="${tempId}">
+                    <div class="ai-header">Analyzing: ${conn.process || 'unknown'} → ${conn.remote || 'unknown'}</div>
+                    <div class="ai-response" style="color: var(--text-muted);">Processing...</div>
+                </div>
+            `);
+            
+            try {
+                const port = parseInt((conn.remote || '').split(':').pop()) || 0;
+                const resp = await fetch(`/api/ai/analyze-connection?process=${encodeURIComponent(conn.process || 'unknown')}&remote=${encodeURIComponent(conn.remote || 'unknown')}&port=${port}`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                
+                const panel = document.getElementById(tempId);
+                if (panel) {
+                    const color = data.suspicious ? 'var(--warning)' : 'var(--success)';
+                    panel.style.borderLeft = `3px solid ${color}`;
+                    panel.querySelector('.ai-response').innerHTML = escapeHtml(data.analysis || 'No analysis available');
+                    panel.querySelector('.ai-response').style.color = '';
+                }
+                
+                document.getElementById('statAnalyses').textContent = 
+                    parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
+                    
+            } catch (e) {
+                const panel = document.getElementById(tempId);
+                if (panel) {
+                    panel.style.borderLeft = '3px solid var(--danger)';
+                    panel.querySelector('.ai-response').textContent = 'Analysis failed: ' + e.message;
+                }
+            }
         }
 
         function updateThreatsList() {
@@ -2105,6 +2150,48 @@
         }
         
         function analyzeDevice() { console.log('Analyze device'); }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    // Refresh data
+                    fetchAllData();
+                    scanNetwork();
+                    break;
+                case 'a':
+                    // AI Analysis
+                    runManualAIAnalysis();
+                    break;
+                case 's':
+                    // Network scan
+                    scanNetwork();
+                    break;
+                case '1':
+                    document.querySelector('[data-view="dashboard"]')?.click();
+                    break;
+                case '2':
+                    document.querySelector('[data-view="devices"]')?.click();
+                    break;
+                case '3':
+                    document.querySelector('[data-view="network"]')?.click();
+                    break;
+                case '4':
+                    document.querySelector('[data-view="threats"]')?.click();
+                    break;
+                case '5':
+                    document.querySelector('[data-view="pentest"]')?.click();
+                    break;
+                case 'escape':
+                    // Close modals
+                    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+                    closeModal();
+                    break;
+            }
+        });
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
