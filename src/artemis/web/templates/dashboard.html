@@ -1064,6 +1064,19 @@
                         </div>
                     </div>
                     
+                    <!-- Tools Status Panel -->
+                    <div class="card" style="margin-bottom: 1rem;" id="pentestToolsCard">
+                        <div class="card-header">
+                            <span>&#128295; Security Tools</span>
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="refreshToolsStatus()">Refresh</button>
+                        </div>
+                        <div class="card-body" style="padding: 0.75rem;">
+                            <div id="toolsStatusGrid" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                <span style="color: var(--text-muted);">Loading tools status...</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Pentest Status Panel -->
                     <div class="card" style="margin-bottom: 1rem;" id="pentestStatusCard">
                         <div class="card-header">
@@ -1117,16 +1130,42 @@
                     </div>
 
                     <!-- Vulnerabilities Found -->
-                    <div class="card">
+                    <div class="card" style="margin-bottom: 1rem;">
                         <div class="card-header">
                             <span>&#9888; Vulnerabilities Found</span>
                             <span id="pentestVulnBadge" style="background: var(--danger); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem;">0</span>
                         </div>
-                        <div class="card-body" id="pentestVulnList" style="min-height: 200px;">
+                        <div class="card-body" id="pentestVulnList" style="min-height: 150px; max-height: 250px;">
                             <div class="empty-state">
                                 <div class="empty-icon">&#9989;</div>
                                 <div>No vulnerabilities found yet</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Debug Log Panel -->
+                    <div class="card" id="pentestDebugPanel">
+                        <div class="card-header" style="cursor: pointer;" onclick="toggleDebugPanel()">
+                            <span>&#128187; Debug Log</span>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="live-badge" id="debugLiveBadge" style="display: none;"><span class="live-dot"></span> Live</span>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); clearDebugLog()">Clear</button>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); downloadDebugLog()">Export</button>
+                                <span id="debugToggleIcon" style="font-size: 1.2rem;">&#9660;</span>
+                            </div>
+                        </div>
+                        <div class="card-body" id="pentestDebugBody" style="padding: 0; max-height: 400px; display: block;">
+                            <div id="pentestDebugLog" style="
+                                font-family: 'JetBrains Mono', monospace;
+                                font-size: 0.8rem;
+                                background: #0a0a0f;
+                                color: #a1a1aa;
+                                padding: 0.75rem;
+                                height: 350px;
+                                overflow-y: auto;
+                                white-space: pre-wrap;
+                                word-break: break-all;
+                            "><span style="color: var(--text-muted);">[Waiting for pentest to start...]</span></div>
                         </div>
                     </div>
                 </div>
@@ -1501,6 +1540,9 @@
                     break;
                 case 'pentest_vulnerability':
                     handlePentestVulnerability(msg.data);
+                    break;
+                case 'pentest_log':
+                    handlePentestLog(msg.data);
                     break;
             }
         }
@@ -2310,8 +2352,20 @@
                     pentestState.running = true;
                     pentestState.target = targetUrl;
                     pentestState.status = 'pre_recon';
+                    pentestState.vulnerabilities = [];
                     updatePentestUI();
                     showNotification('Pentest started');
+                    
+                    // Initialize debug log
+                    clearDebugLog();
+                    addDebugLog('info', '═'.repeat(50));
+                    addDebugLog('info', 'ARTEMIS PENTEST STARTED');
+                    addDebugLog('info', '═'.repeat(50));
+                    addDebugLog('info', `Target: ${targetUrl}`);
+                    addDebugLog('info', `Model: ${payload.model}`);
+                    addDebugLog('info', `Mode: ${payload.repo_path ? 'Whitebox' : 'Blackbox'}`);
+                    addDebugLog('info', `Parallel: ${payload.parallel ? 'Yes' : 'No'}`);
+                    addDebugLog('info', '─'.repeat(50));
                     
                     // Start polling for status
                     pollPentestStatus();
@@ -2553,6 +2607,62 @@
             document.getElementById('pentestVulnModal').classList.add('active');
         }
 
+        async function refreshToolsStatus() {
+            const container = document.getElementById('toolsStatusGrid');
+            container.innerHTML = '<span style="color: var(--text-muted);">Checking tools...</span>';
+            
+            try {
+                const response = await fetch('/api/pentest/tools');
+                const data = await response.json();
+                
+                const toolIcons = {
+                    nmap: '&#128270;',
+                    subfinder: '&#127760;',
+                    httpx: '&#128279;',
+                    katana: '&#128375;',
+                    ffuf: '&#128269;',
+                    gobuster: '&#128193;',
+                    sqlmap: '&#128187;',
+                };
+                
+                container.innerHTML = Object.entries(data.tools).map(([name, info]) => {
+                    const available = info.available;
+                    const icon = toolIcons[name] || '&#128295;';
+                    const color = available ? 'var(--success)' : 'var(--text-muted)';
+                    const bgColor = available ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-tertiary)';
+                    
+                    return `<span style="
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        padding: 0.25rem 0.5rem;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        background: ${bgColor};
+                        color: ${color};
+                        border: 1px solid ${available ? 'var(--success)' : 'var(--border)'};
+                    " title="${info.path || 'Not installed'}">${icon} ${name}</span>`;
+                }).join('');
+                
+                // Add summary
+                container.innerHTML += `<span style="
+                    color: var(--text-muted);
+                    font-size: 0.75rem;
+                    margin-left: 0.5rem;
+                ">${data.available_count}/${data.total_count} available</span>`;
+                
+            } catch (e) {
+                container.innerHTML = '<span style="color: var(--danger);">Failed to load tools</span>';
+            }
+        }
+
+        // Load tools status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('toolsStatusGrid')) {
+                refreshToolsStatus();
+            }
+        });
+
         async function viewPentestHistory() {
             try {
                 const response = await fetch('/api/pentest/sessions');
@@ -2585,7 +2695,139 @@
         function handlePentestVulnerability(vuln) {
             pentestState.vulnerabilities.push(vuln);
             renderPentestVulns();
+            addDebugLog('vuln', `[VULN] ${vuln.severity?.toUpperCase() || 'MEDIUM'}: ${vuln.title || 'Unknown'}`);
         }
+
+        function handlePentestLog(log) {
+            addDebugLog(log.level || 'info', log.message || log);
+        }
+
+        // =====================================================================
+        // Debug Log Functions
+        // =====================================================================
+
+        let debugLogs = [];
+        let debugPanelCollapsed = false;
+        let debugAutoScroll = true;
+
+        function addDebugLog(level, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = { timestamp, level, message };
+            debugLogs.push(entry);
+            
+            // Keep last 500 entries
+            if (debugLogs.length > 500) {
+                debugLogs = debugLogs.slice(-500);
+            }
+            
+            renderDebugLog();
+            
+            // Show live badge
+            const liveBadge = document.getElementById('debugLiveBadge');
+            if (liveBadge) liveBadge.style.display = 'flex';
+        }
+
+        function renderDebugLog() {
+            const container = document.getElementById('pentestDebugLog');
+            if (!container) return;
+
+            const levelColors = {
+                'info': 'var(--text-secondary)',
+                'debug': 'var(--text-muted)',
+                'warn': 'var(--warning)',
+                'error': 'var(--danger)',
+                'success': 'var(--success)',
+                'vuln': 'var(--danger)',
+                'agent': 'var(--accent)',
+                'llm': 'var(--purple)',
+                'http': 'var(--blue)',
+                'phase': 'var(--pink)'
+            };
+
+            container.innerHTML = debugLogs.map(entry => {
+                const color = levelColors[entry.level] || levelColors.info;
+                const levelTag = entry.level.toUpperCase().padEnd(7);
+                return `<div style="margin-bottom: 2px;"><span style="color: var(--text-muted);">${entry.timestamp}</span> <span style="color: ${color};">[${levelTag}]</span> ${escapeHtml(entry.message)}</div>`;
+            }).join('');
+
+            // Auto-scroll to bottom
+            if (debugAutoScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function clearDebugLog() {
+            debugLogs = [];
+            const container = document.getElementById('pentestDebugLog');
+            if (container) {
+                container.innerHTML = '<span style="color: var(--text-muted);">[Log cleared]</span>';
+            }
+            const liveBadge = document.getElementById('debugLiveBadge');
+            if (liveBadge) liveBadge.style.display = 'none';
+        }
+
+        function toggleDebugPanel() {
+            const body = document.getElementById('pentestDebugBody');
+            const icon = document.getElementById('debugToggleIcon');
+            
+            debugPanelCollapsed = !debugPanelCollapsed;
+            
+            if (debugPanelCollapsed) {
+                body.style.display = 'none';
+                icon.innerHTML = '&#9654;'; // Right arrow
+            } else {
+                body.style.display = 'block';
+                icon.innerHTML = '&#9660;'; // Down arrow
+                renderDebugLog();
+            }
+        }
+
+        function downloadDebugLog() {
+            const content = debugLogs.map(e => `${e.timestamp} [${e.level.toUpperCase()}] ${e.message}`).join('\n');
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pentest-debug-${Date.now()}.log`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Enhanced pentest update handler with logging
+        const originalHandlePentestUpdate = handlePentestUpdate;
+        handlePentestUpdate = function(data) {
+            // Log phase changes
+            if (data.status && data.status !== pentestState.status) {
+                addDebugLog('phase', `Phase changed: ${pentestState.status || 'idle'} -> ${data.status}`);
+            }
+            
+            // Log agent changes
+            if (data.current_agent && data.current_agent !== pentestState.currentAgent) {
+                addDebugLog('agent', `Agent started: ${data.current_agent}`);
+            }
+            
+            // Log task updates
+            if (data.current_task && data.current_task !== pentestState.currentTask) {
+                addDebugLog('info', data.current_task);
+            }
+            
+            // Log completed agents
+            if (data.completed_agents) {
+                const newCompleted = data.completed_agents.filter(a => !pentestState.completedAgents.includes(a));
+                newCompleted.forEach(agent => {
+                    addDebugLog('success', `Agent completed: ${agent}`);
+                });
+            }
+            
+            // Call original handler
+            pentestState.running = data.status !== 'complete' && data.status !== 'failed' && data.status !== 'idle';
+            pentestState.status = data.status;
+            pentestState.progress = data.progress_percent || 0;
+            pentestState.currentAgent = data.current_agent || '';
+            pentestState.currentTask = data.current_task || '';
+            pentestState.completedAgents = data.completed_agents || [];
+            updatePentestUI();
+        };
         
         // Helper functions
         function showNotification(message, type = 'info') {

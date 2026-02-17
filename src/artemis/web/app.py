@@ -303,7 +303,11 @@ async def start_pentest(req: PentestStartRequest):
     def on_progress(state):
         asyncio.create_task(security_state.update_pentest_state(state.to_dict()))
     
-    _pentest_pipeline = PentestPipeline(config, on_progress=on_progress)
+    # Log callback that streams logs to WebSocket
+    def on_log(level, message):
+        asyncio.create_task(security_state.add_pentest_log(level, message))
+    
+    _pentest_pipeline = PentestPipeline(config, on_progress=on_progress, on_log=on_log)
     
     # Start in background
     _pentest_task = asyncio.create_task(_pentest_pipeline.run())
@@ -424,10 +428,33 @@ async def list_pentest_sessions():
     return {"sessions": sessions}
 
 
+@app.get("/api/pentest/tools")
+async def get_pentest_tools():
+    """Get available pentest tools status."""
+    from artemis.pentest.tools import get_tools
+    
+    tools = get_tools()
+    available = tools.get_available_tools()
+    
+    all_tools = ["nmap", "subfinder", "httpx", "katana", "ffuf", "gobuster", "sqlmap"]
+    
+    return {
+        "tools": {
+            tool: {
+                "available": tool in available,
+                "path": tools.TOOL_PATHS.get(tool),
+            }
+            for tool in all_tools
+        },
+        "available_count": len(available),
+        "total_count": len(all_tools),
+    }
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.1.0"}
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):

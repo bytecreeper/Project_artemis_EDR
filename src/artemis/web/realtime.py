@@ -189,6 +189,17 @@ class SecurityState:
             "data": vuln,
         })
     
+    async def add_pentest_log(self, level: str, message: str):
+        """Add a pentest log entry."""
+        await manager.broadcast({
+            "type": "pentest_log",
+            "data": {
+                "level": level,
+                "message": message,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        })
+    
     def get_full_state(self) -> dict:
         """Get complete state snapshot."""
         return {
