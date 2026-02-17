@@ -2362,19 +2362,23 @@ ${escapeHtml(data.analysis || 'No analysis available')}
         // Manual AI analysis button
         async function runManualAIAnalysis() {
             const aiList = document.getElementById('aiList');
-            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Analyzing...</div>';
+            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Analyzing with AI...</div>';
+            
+            console.log('Starting AI analysis...');
             
             try {
                 const resp = await fetch('/api/ai/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        connections: state.connections.slice(0, 20),
-                        threats: state.threats,
-                        devices: state.devices,
-                        model: "deepseek-r1:70b"  // Full model for manual analysis
+                        connections: state.connections.slice(0, 10),
+                        threats: state.threats.slice(0, 5),
+                        devices: state.devices.slice(0, 10),
+                        model: "qwen3:14b"  // Fast model for responsive UI
                     })
                 });
+                
+                console.log('AI response received');
                 
                 const data = await resp.json();
                 aiList.innerHTML = '';
