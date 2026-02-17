@@ -1174,6 +1174,7 @@ class SysmonEventRequest(BaseModel):
 async def ingest_sysmon_events(req: SysmonEventRequest):
     """Ingest Sysmon events for analysis."""
     parser = get_sysmon_parser()
+    timeline = get_timeline_engine()
     
     processed = 0
     alerts = 0
@@ -1190,6 +1191,11 @@ async def ingest_sysmon_events(req: SysmonEventRequest):
                 processed += 1
                 if event.alerts:
                     alerts += 1
+                # Add to timeline
+                try:
+                    timeline.add_sysmon_event(event.to_dict())
+                except Exception as te:
+                    logger.warning(f"Failed to add sysmon event to timeline: {te}")
         except Exception as e:
             errors.append(str(e))
     
@@ -1287,6 +1293,19 @@ async def get_process_alerts(limit: int = 50):
 async def start_process_monitor():
     """Start the process monitor."""
     monitor = get_process_monitor()
+    timeline = get_timeline_engine()
+    
+    # Wire process events to timeline
+    def on_process_event(event):
+        try:
+            timeline.add_process_event(event.to_dict())
+        except Exception as e:
+            logger.warning(f"Failed to add process event to timeline: {e}")
+    
+    # Only add callback once
+    if on_process_event not in monitor._callbacks:
+        monitor.on_event(on_process_event)
+    
     monitor.start()
     return {
         "success": True,

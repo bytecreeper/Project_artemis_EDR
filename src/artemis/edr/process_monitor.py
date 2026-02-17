@@ -303,6 +303,11 @@ class ProcessMonitor:
         if name_lower in SUSPICIOUS_PROCESSES:
             event.alerts.append(f"Suspicious process: {event.name}")
             event.severity = "medium"
+            # Tag MITRE for command interpreters
+            if name_lower in ("powershell.exe", "pwsh.exe"):
+                event.mitre_techniques.append("T1059.001")  # PowerShell
+            elif name_lower in ("cmd.exe", "wscript.exe", "cscript.exe", "mshta.exe"):
+                event.mitre_techniques.append("T1059")  # Command Interpreter
         
         # Check parent-child relationships
         if (parent_lower, name_lower) in SUSPICIOUS_PARENT_CHILD:
