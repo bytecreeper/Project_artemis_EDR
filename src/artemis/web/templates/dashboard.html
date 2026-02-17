@@ -748,6 +748,92 @@
         .log-success { color: var(--success); }
         .log-error { color: var(--danger); }
         .log-warn { color: var(--warning); }
+
+        /* AI Progress Animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px var(--accent); }
+            50% { box-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent-dim); }
+        }
+        @keyframes typing {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .ai-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .ai-progress-container {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-dim);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.375rem;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .ai-progress-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .ai-progress-log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            background: #030303;
+            border-radius: 4px;
+            padding: 0.5rem;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        .ai-progress-log .step {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .ai-progress-log .step-time {
+            color: var(--text-muted);
+            min-width: 55px;
+        }
+        .ai-progress-log .step-icon {
+            min-width: 16px;
+        }
+        .ai-progress-log .step-done { color: var(--success); }
+        .ai-progress-log .step-active { color: var(--accent); }
+        .ai-progress-log .step-active .step-text::after {
+            content: '...';
+            animation: typing 1s ease-in-out infinite;
+        }
+        .ai-progress-log .step-pending { color: var(--text-muted); opacity: 0.5; }
+        .ai-progress-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 0.75rem;
+            overflow: hidden;
+        }
+        .ai-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-dim), var(--accent), var(--accent-bright));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body>
@@ -1518,12 +1604,17 @@
                 aiList.innerHTML = '';
             }
             
-            // Show analyzing state
+            // Show analyzing state with spinner
             const tempId = 'analyzing-' + Date.now();
             aiList.insertAdjacentHTML('afterbegin', `
-                <div class="ai-panel" style="margin: 0.375rem;" id="${tempId}">
-                    <div class="ai-header">Analyzing: ${conn.process || 'unknown'} → ${conn.remote || 'unknown'}</div>
-                    <div class="ai-response" style="color: var(--text-muted);">Processing...</div>
+                <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--accent);" id="${tempId}">
+                    <div class="ai-header" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="ai-spinner" style="width: 12px; height: 12px;"></span>
+                        <span>Analyzing: ${escapeHtml(conn.process || 'unknown')} → ${escapeHtml(conn.remote || 'unknown')}</span>
+                    </div>
+                    <div class="ai-progress-log" style="max-height: 60px; font-size: 0.65rem;" id="${tempId}-log">
+                        <div class="step step-active"><span class="step-time">${new Date().toLocaleTimeString('en-US', { hour12: false })}</span><span class="step-icon">◉</span><span class="step-text">Querying AI</span></div>
+                    </div>
                 </div>
             `);
             
@@ -1537,9 +1628,16 @@
                 const panel = document.getElementById(tempId);
                 if (panel) {
                     const color = data.suspicious ? 'var(--warning)' : 'var(--success)';
+                    const icon = data.suspicious ? '⚠' : '✓';
                     panel.style.borderLeft = `3px solid ${color}`;
-                    panel.querySelector('.ai-response').innerHTML = escapeHtml(data.analysis || 'No analysis available');
-                    panel.querySelector('.ai-response').style.color = '';
+                    panel.innerHTML = `
+                        <div class="ai-header" style="display: flex; justify-content: space-between;">
+                            <span>${icon} ${escapeHtml(conn.process || 'unknown')} → ${escapeHtml(conn.remote || 'unknown')}</span>
+                            <span style="color: ${color}; font-size: 0.7rem;">${data.suspicious ? 'SUSPICIOUS' : 'OK'}</span>
+                        </div>
+                        <div class="ai-response" style="font-size: 0.8rem;">${escapeHtml(data.analysis || 'No analysis available')}</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">${new Date().toLocaleTimeString()}</div>
+                    `;
                 }
                 
                 document.getElementById('statAnalyses').textContent = 
@@ -1549,7 +1647,10 @@
                 const panel = document.getElementById(tempId);
                 if (panel) {
                     panel.style.borderLeft = '3px solid var(--danger)';
-                    panel.querySelector('.ai-response').textContent = 'Analysis failed: ' + e.message;
+                    panel.innerHTML = `
+                        <div class="ai-header">✗ Analysis Failed</div>
+                        <div class="ai-response" style="color: var(--danger);">${escapeHtml(e.message)}</div>
+                    `;
                 }
             }
         }
@@ -2160,8 +2261,34 @@
             const modal = document.getElementById('deviceModal');
             const actionBtn = modal.querySelector('.btn-primary');
             const originalText = actionBtn.textContent;
-            actionBtn.textContent = 'Analyzing...';
+            actionBtn.innerHTML = '<span class="ai-spinner" style="width: 12px; height: 12px; margin-right: 0.5rem;"></span>Analyzing...';
             actionBtn.disabled = true;
+            
+            // Show progress in AI panel
+            const aiList = document.getElementById('aiList');
+            const progressId = 'device-analyze-' + Date.now();
+            
+            if (aiList.querySelector('.empty-state')) {
+                aiList.innerHTML = '';
+            }
+            
+            aiList.insertAdjacentHTML('afterbegin', `
+                <div class="ai-progress-container" id="${progressId}" style="animation: none; border-color: var(--accent);">
+                    <div class="ai-progress-header">
+                        <span class="ai-spinner"></span>
+                        <span>Analyzing Device: ${escapeHtml(device.ip)}</span>
+                    </div>
+                    <div class="ai-progress-log" id="${progressId}-log" style="max-height: 80px;">
+                        <div class="step step-done"><span class="step-time">${new Date().toLocaleTimeString('en-US', { hour12: false })}</span><span class="step-icon">✓</span><span class="step-text">Device selected: ${escapeHtml(device.vendor || 'Unknown')} (${escapeHtml(device.type || 'unknown')})</span></div>
+                        <div class="step step-active"><span class="step-time">${new Date().toLocaleTimeString('en-US', { hour12: false })}</span><span class="step-icon">◉</span><span class="step-text">Sending to DeepSeek R1:70b</span></div>
+                    </div>
+                    <div class="ai-progress-bar">
+                        <div class="ai-progress-fill" style="width: 30%;"></div>
+                    </div>
+                </div>
+            `);
+            
+            const startTime = Date.now();
             
             try {
                 const resp = await fetch('/api/ai/analyze', {
@@ -2175,28 +2302,25 @@
                 });
                 
                 const data = await resp.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                // Remove progress container
+                document.getElementById(progressId)?.remove();
                 
                 if (data.success) {
-                    // Show result in AI panel on main dashboard
-                    const aiList = document.getElementById('aiList');
-                    if (aiList.querySelector('.empty-state')) {
-                        aiList.innerHTML = '';
-                    }
-                    
                     const riskColor = data.risk_level >= 7 ? 'var(--danger)' : 
                                      data.risk_level >= 4 ? 'var(--warning)' : 'var(--success)';
+                    const riskIcon = data.risk_level >= 7 ? '🔴' : data.risk_level >= 4 ? '🟡' : '🟢';
                     
                     aiList.insertAdjacentHTML('afterbegin', `
                         <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid ${riskColor};">
                             <div class="ai-header" style="display: flex; justify-content: space-between;">
-                                <span>Device: ${device.ip}</span>
+                                <span>${riskIcon} Device: ${escapeHtml(device.ip)}</span>
                                 <span style="color: ${riskColor}; font-weight: bold;">Risk: ${data.risk_level}/10</span>
                             </div>
-                            <div class="ai-response" style="white-space: pre-wrap; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
-${escapeHtml(data.analysis || 'No analysis available')}
-                            </div>
+                            <div class="ai-response" style="white-space: pre-wrap; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">${escapeHtml(data.analysis || 'No analysis available')}</div>
                             <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                ${new Date().toLocaleTimeString()}
+                                ${new Date().toLocaleTimeString()} • ${elapsed}s • deepseek-r1:70b
                             </div>
                         </div>
                     `);
@@ -2204,15 +2328,26 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     document.getElementById('statAnalyses').textContent = 
                         parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
                     
-                    // Close modal and show success
+                    // Close modal
                     closeModal();
                     
                 } else {
-                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                    aiList.insertAdjacentHTML('afterbegin', `
+                        <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--danger);">
+                            <div class="ai-header">✗ Analysis Failed: ${escapeHtml(device.ip)}</div>
+                            <div class="ai-response" style="color: var(--danger);">${escapeHtml(data.error || 'Unknown error')}</div>
+                        </div>
+                    `);
                 }
                 
             } catch (e) {
-                alert('Error: ' + e.message);
+                document.getElementById(progressId)?.remove();
+                aiList.insertAdjacentHTML('afterbegin', `
+                    <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--danger);">
+                        <div class="ai-header">✗ Error analyzing ${escapeHtml(device.ip)}</div>
+                        <div class="ai-response" style="color: var(--danger);">${escapeHtml(e.message)}</div>
+                    </div>
+                `);
             } finally {
                 actionBtn.textContent = originalText;
                 actionBtn.disabled = false;
@@ -2312,6 +2447,8 @@ ${escapeHtml(data.analysis || 'No analysis available')}
             aiAnalysisRunning = true;
             lastAIAnalysisTime = now;
             
+            const aiList = document.getElementById('aiList');
+            
             try {
                 // Prepare context for AI
                 const suspiciousConns = state.connections.filter(conn => {
@@ -2329,6 +2466,17 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 
                 // Only call AI if there's something interesting
                 if (suspiciousConns.length > 0 || state.threats.length > 0) {
+                    // Show subtle auto-scan indicator
+                    const miniProgress = document.createElement('div');
+                    miniProgress.id = 'auto-ai-progress';
+                    miniProgress.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: 6px; margin: 0.375rem; font-size: 0.75rem; color: var(--accent);';
+                    miniProgress.innerHTML = '<span class="ai-spinner" style="width: 12px; height: 12px;"></span> Auto-analyzing (qwen3:14b)...';
+                    
+                    if (aiList.querySelector('.empty-state')) {
+                        aiList.innerHTML = '';
+                    }
+                    aiList.insertBefore(miniProgress, aiList.firstChild);
+                    
                     const resp = await fetch('/api/ai/analyze', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2336,6 +2484,9 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     });
                     
                     const data = await resp.json();
+                    
+                    // Remove progress indicator
+                    document.getElementById('auto-ai-progress')?.remove();
                     
                     if (data.success) {
                         addAIAnalysis(data);
@@ -2347,6 +2498,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 
             } catch (e) {
                 console.error('AI analysis error:', e);
+                document.getElementById('auto-ai-progress')?.remove();
             } finally {
                 aiAnalysisRunning = false;
             }
@@ -2430,25 +2582,88 @@ ${escapeHtml(data.analysis || 'No analysis available')}
         // Manual AI analysis button
         async function runManualAIAnalysis() {
             const aiList = document.getElementById('aiList');
-            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--accent);">Analyzing with DeepSeek R1... (this may take a minute)</div>';
+            const startTime = Date.now();
+            
+            // Build progress UI
+            const progressId = 'ai-progress-' + startTime;
+            aiList.innerHTML = `
+                <div class="ai-progress-container" id="${progressId}">
+                    <div class="ai-progress-header">
+                        <span class="ai-spinner"></span>
+                        <span>DeepSeek R1 Security Analysis</span>
+                    </div>
+                    <div class="ai-progress-log" id="${progressId}-log">
+                    </div>
+                    <div class="ai-progress-bar">
+                        <div class="ai-progress-fill" id="${progressId}-bar" style="width: 5%;"></div>
+                    </div>
+                </div>
+            `;
+            
+            const logEl = document.getElementById(`${progressId}-log`);
+            const barEl = document.getElementById(`${progressId}-bar`);
+            
+            function logStep(icon, text, status = 'active') {
+                const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                // Mark previous active as done
+                logEl.querySelectorAll('.step-active').forEach(el => {
+                    el.classList.remove('step-active');
+                    el.classList.add('step-done');
+                    el.querySelector('.step-icon').textContent = '✓';
+                });
+                const step = document.createElement('div');
+                step.className = `step step-${status}`;
+                step.innerHTML = `<span class="step-time">${time}</span><span class="step-icon">${icon}</span><span class="step-text">${text}</span>`;
+                logEl.appendChild(step);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+            
+            function setProgress(pct) {
+                barEl.style.width = pct + '%';
+            }
             
             console.log('Starting AI analysis with deepseek-r1:70b...');
             
             try {
+                // Step 1: Collecting data
+                logStep('◉', 'Collecting network state');
+                setProgress(10);
+                await sleep(100);
+                
+                const payload = {
+                    connections: state.connections.slice(0, 20),
+                    threats: state.threats,
+                    devices: state.devices,
+                    model: "deepseek-r1:70b"
+                };
+                
+                logStep('◉', `Prepared ${state.connections.length} connections, ${state.devices.length} devices`);
+                setProgress(20);
+                await sleep(100);
+                
+                // Step 2: Sending to AI
+                logStep('◉', 'Sending to DeepSeek R1:70b');
+                setProgress(30);
+                
                 const resp = await fetch('/api/ai/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        connections: state.connections.slice(0, 20),
-                        threats: state.threats,
-                        devices: state.devices,
-                        model: "deepseek-r1:70b"  // Quality model
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
-                console.log('AI response received');
+                logStep('◉', 'Processing response');
+                setProgress(80);
                 
                 const data = await resp.json();
+                
+                // Final step
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                logStep('✓', `Complete in ${elapsed}s`, 'done');
+                setProgress(100);
+                
+                await sleep(500);
+                
+                // Clear progress and show results
                 aiList.innerHTML = '';
                 
                 if (data.success) {
@@ -2460,11 +2675,20 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     </div>`;
                 }
             } catch (e) {
-                aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem;">
+                logStep('✗', 'Error: ' + e.message, 'done');
+                setProgress(100);
+                barEl.style.background = 'var(--danger)';
+                
+                await sleep(2000);
+                aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--danger);">
                     <div class="ai-header">Error</div>
                     <div class="ai-response">${escapeHtml(e.message)}</div>
                 </div>`;
             }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
         }
         
         // ========== RED TEAM OPERATIONS ==========
