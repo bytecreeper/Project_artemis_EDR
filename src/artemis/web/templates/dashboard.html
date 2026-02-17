@@ -57,27 +57,31 @@
         }
 
         .sidebar-header {
-            padding: 1.25rem 1rem;
+            padding: 1.5rem 1rem;
             border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, transparent 100%);
         }
 
         .logo {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .logo-img {
-            width: 40px;
-            height: 40px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.3));
         }
 
         .logo-text {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             color: var(--accent);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
         }
 
         .nav-section {
@@ -1729,8 +1733,37 @@
             });
         }
 
-        // Placeholder functions
-        function scanNetwork() { console.log('Scan network'); }
+        // Network scanning
+        async function scanNetwork() {
+            const btn = event?.target;
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Scanning...';
+            }
+            
+            try {
+                const response = await fetch('/api/scan/network', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    state.devices = data.devices || [];
+                    updateDevicesList();
+                    refreshTopology();
+                    
+                    // Show result
+                    alert(`Found ${data.devices_found} devices on ${data.network_range}`);
+                } else {
+                    alert('Scan failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Scan failed: ' + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Scan Network';
+                }
+            }
+        }
         function exportDevices() { console.log('Export devices'); }
         function exportTraffic() { console.log('Export traffic'); }
         function clearConnections() { state.connections = []; updateConnectionsList(); }

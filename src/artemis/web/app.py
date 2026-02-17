@@ -500,10 +500,129 @@ async def get_full_state():
     return security_state.get_full_state()
 
 
+@app.post("/api/scan/network")
+async def scan_network():
+    """Trigger a network scan to discover devices."""
+    import subprocess
+    import re
+    from datetime import datetime, timezone
+    
+    devices = []
+    seen_ips = set()
+    network_range = "192.168.4.0/24"  # Default
+    
+    try:
+        # Run ARP scan - gets all cached entries
+        arp_result = subprocess.run(
+            ["arp", "-a"],
+            capture_output=True, text=True, timeout=30
+        )
+        
+        # Parse all ARP entries
+        current_interface = ""
+        for line in arp_result.stdout.split("\n"):
+            # Check for interface line
+            if "Interface:" in line:
+                iface_match = re.search(r'Interface:\s+(\d+\.\d+\.\d+\.\d+)', line)
+                if iface_match:
+                    current_interface = iface_match.group(1)
+                    # Use 192.168.x.x network if found
+                    if current_interface.startswith("192.168"):
+                        network_range = ".".join(current_interface.split(".")[:3]) + ".0/24"
+                continue
+            
+            # Match IP and MAC
+            match = re.search(r'(\d+\.\d+\.\d+\.\d+)\s+([0-9a-fA-F-]{17})\s+(\w+)', line)
+            if match:
+                ip = match.group(1)
+                mac = match.group(2).replace("-", ":").lower()
+                entry_type = match.group(3)
+                
+                # Skip broadcast and multicast
+                if ip.endswith(".255") or ip.startswith("224.") or ip.startswith("239."):
+                    continue
+                
+                if ip not in seen_ips:
+                    seen_ips.add(ip)
+                    
+                    # Determine device type from MAC prefix
+                    mac_prefix = mac[:8].upper().replace(":", "-")
+                    device_type = "desktop"
+                    vendor = ""
+                    
+                    # Common vendor prefixes (expanded)
+                    vendor_map = {
+                        "00-50-56": ("server", "VMware"),
+                        "00-0C-29": ("server", "VMware"),
+                        "00-15-5D": ("server", "Hyper-V"),
+                        "00-1C-42": ("server", "Parallels"),
+                        "AC-DE-48": ("iot", "Raspberry Pi"),
+                        "B8-27-EB": ("iot", "Raspberry Pi"),
+                        "DC-A6-32": ("iot", "Raspberry Pi"),
+                        "E4-5F-01": ("iot", "Raspberry Pi"),
+                        "00-1A-79": ("router", "Ubiquiti"),
+                        "78-8A-20": ("router", "Ubiquiti"),
+                        "F0-9F-C2": ("router", "Ubiquiti"),
+                        "00-18-0A": ("router", "Cisco"),
+                        "00-1B-54": ("router", "Cisco"),
+                        "18-E8-29": ("router", "Netgear"),
+                        "A0-63-91": ("router", "Netgear"),
+                        "F8-FF-C2": ("mobile", "Apple"),
+                        "A4-83-E7": ("mobile", "Apple"),
+                        "3C-06-30": ("mobile", "Apple"),
+                        "70-56-81": ("mobile", "Apple"),
+                        "A4-C3-F0": ("mobile", "Intel"),
+                        "5C-E0-C5": ("mobile", "Samsung"),
+                        "CC-46-D6": ("desktop", "Google"),
+                        "74-D4-35": ("desktop", "Giga-Byte"),
+                        "04-D9-F5": ("desktop", "Asus"),
+                        "00-25-22": ("desktop", "ASRock"),
+                        "74-D0-2B": ("desktop", "ASUSTek"),
+                        "D8-BB-C1": ("desktop", "Micro-Star"),
+                    }
+                    
+                    for prefix, (dtype, vend) in vendor_map.items():
+                        if mac_prefix.startswith(prefix):
+                            device_type = dtype
+                            vendor = vend
+                            break
+                    
+                    device = {
+                        "ip": ip,
+                        "mac": mac,
+                        "hostname": ip,
+                        "type": device_type,
+                        "vendor": vendor,
+                        "status": "online",
+                        "last_seen": datetime.now(timezone.utc).isoformat(),
+                    }
+                    devices.append(device)
+                    
+                    # Update security state
+                    await security_state.update_device(ip, device)
+        
+        # Sort by IP
+        devices.sort(key=lambda d: [int(x) for x in d["ip"].split(".")])
+        
+        return {
+            "success": True,
+            "devices_found": len(devices),
+            "network_range": network_range,
+            "devices": devices,
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "devices": [],
+        }
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.1.1"}
+    return {"status": "ok", "version": "1.1.2"}
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):
