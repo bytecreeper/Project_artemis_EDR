@@ -172,7 +172,7 @@ class TrafficMonitor:
             interface: Network interface to monitor (None = all)
             log_dir: Directory for traffic logs
             capture_dns: Capture and log DNS queries
-            local_subnet: Local subnet (e.g., "192.168.4.0/24")
+            local_subnet: Local subnet (e.g., "192.168.1.0/24")
         """
         self.interface = interface
         self.log_dir = log_dir or (Path.home() / ".artemis" / "traffic")

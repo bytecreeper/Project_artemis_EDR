@@ -116,7 +116,7 @@ class NetworkMonitor:
         'powershell_ise',  # Can be suspicious in some contexts
     }
     
-    def __init__(self, local_network: str = "192.168.4.0/24"):
+    def __init__(self, local_network: str = "192.168.1.0/24"):
         self.local_network = local_network
         self.local_prefix = ".".join(local_network.split("/")[0].split(".")[:3]) + "."
         
@@ -692,7 +692,7 @@ class NetworkMonitor:
 _monitor: Optional[NetworkMonitor] = None
 
 
-def get_monitor(network_range: str = "192.168.4.0/24") -> NetworkMonitor:
+def get_monitor(network_range: str = "192.168.1.0/24") -> NetworkMonitor:
     """Get or create the global monitor instance."""
     global _monitor
     if _monitor is None:

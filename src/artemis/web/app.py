@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     # Startup: Initialize the network monitor
     settings = load_settings()
-    network_range = settings.get("network_range", "192.168.4.0/24")
+    network_range = settings.get("network_range", "192.168.1.0/24")
     monitor = get_monitor(network_range)
     
     # Register callbacks to update security_state
@@ -686,7 +686,7 @@ async def get_full_state():
 async def scan_network():
     """Trigger a network scan using high-performance monitor."""
     settings = load_settings()
-    network_range = settings.get("network_range", "192.168.4.0/24")
+    network_range = settings.get("network_range", "192.168.1.0/24")
     
     monitor = get_monitor(network_range)
     devices = monitor.scan_arp_table()
@@ -722,7 +722,7 @@ DEFAULT_SETTINGS = {
     "provider": "ollama",
     "model": "deepseek-r1:70b",
     "scan_interval": 60,
-    "network_range": "192.168.4.0/24",
+    "network_range": "192.168.1.0/24",
     "auto_quarantine": False,
     "double_verify": True,
     "require_approval": True,

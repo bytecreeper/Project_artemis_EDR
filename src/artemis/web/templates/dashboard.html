@@ -1211,7 +1211,7 @@
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                                 <div style="flex: 1; min-width: 200px;">
                                     <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Target (URL or IP)</label>
-                                    <input type="text" class="form-input" id="rtQuickTarget" placeholder="http://192.168.4.1 or 10.0.0.1" style="width: 100%;">
+                                    <input type="text" class="form-input" id="rtQuickTarget" placeholder="http://192.168.1.1 or 10.0.0.1" style="width: 100%;">
                                 </div>
                                 <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                                     <button class="btn btn-secondary" onclick="quickRecon()">Quick Recon</button>
@@ -1288,7 +1288,7 @@
                         <div class="modal-body" style="padding: 1rem;">
                             <div style="margin-bottom: 1rem;">
                                 <label style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem;">Target URL or IP</label>
-                                <input type="text" class="form-input" id="rtModalTarget" placeholder="http://192.168.4.1 or 10.0.0.1" style="width: 100%;">
+                                <input type="text" class="form-input" id="rtModalTarget" placeholder="http://192.168.1.1 or 10.0.0.1" style="width: 100%;">
                             </div>
                             <div style="margin-bottom: 1rem;">
                                 <label style="display: block; margin-bottom: 0.25rem; font-size: 0.85rem;">Scan Mode</label>
@@ -1637,7 +1637,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Network Range</label>
-                                <input type="text" class="form-input" id="settingsNetworkRange" value="192.168.4.0/24">
+                                <input type="text" class="form-input" id="settingsNetworkRange" value="192.168.1.0/24">
                             </div>
                         </div>
                     </div>
@@ -2735,7 +2735,7 @@
                     document.getElementById('settingsScanInterval').value = settings.scan_interval || 60;
                 }
                 if (document.getElementById('settingsNetworkRange')) {
-                    document.getElementById('settingsNetworkRange').value = settings.network_range || '192.168.4.0/24';
+                    document.getElementById('settingsNetworkRange').value = settings.network_range || '192.168.1.0/24';
                 }
                 if (document.getElementById('settingsAutoQuarantine')) {
                     document.getElementById('settingsAutoQuarantine').checked = settings.auto_quarantine || false;
@@ -2766,7 +2766,7 @@
                 provider: document.getElementById('settingsProvider')?.value || 'ollama',
                 model: document.getElementById('settingsModel')?.value || 'deepseek-r1:70b',
                 scan_interval: parseInt(document.getElementById('settingsScanInterval')?.value) || 60,
-                network_range: document.getElementById('settingsNetworkRange')?.value || '192.168.4.0/24',
+                network_range: document.getElementById('settingsNetworkRange')?.value || '192.168.1.0/24',
                 auto_quarantine: document.getElementById('settingsAutoQuarantine')?.checked || false,
                 double_verify: document.getElementById('settingsDoubleVerify')?.checked !== false,
                 require_approval: document.getElementById('settingsRequireApproval')?.checked !== false,
