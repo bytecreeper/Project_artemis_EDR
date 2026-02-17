@@ -1125,6 +1125,341 @@ async def counter_attack(target: str, full: bool = False):
     }
 
 
+# ============================================================================
+# EDR (Endpoint Detection & Response) Endpoints
+# ============================================================================
+
+# Lazy-loaded EDR components
+_sysmon_parser = None
+_process_monitor = None
+_threat_intel = None
+
+
+def get_sysmon_parser():
+    """Get or create Sysmon parser instance."""
+    global _sysmon_parser
+    if _sysmon_parser is None:
+        from artemis.edr import SysmonParser
+        _sysmon_parser = SysmonParser()
+    return _sysmon_parser
+
+
+def get_process_monitor():
+    """Get or create process monitor instance."""
+    global _process_monitor
+    if _process_monitor is None:
+        from artemis.edr import ProcessMonitor
+        _process_monitor = ProcessMonitor()
+    return _process_monitor
+
+
+def get_threat_intel():
+    """Get or create threat intel feed instance."""
+    global _threat_intel
+    if _threat_intel is None:
+        from artemis.edr import ThreatIntelFeed
+        _threat_intel = ThreatIntelFeed()
+    return _threat_intel
+
+
+# --- Sysmon Endpoints ---
+
+class SysmonEventRequest(BaseModel):
+    """Request for ingesting Sysmon events."""
+    events: list[dict]
+    format: str = "json"  # "json" or "xml"
+
+
+@app.post("/api/edr/sysmon/ingest")
+async def ingest_sysmon_events(req: SysmonEventRequest):
+    """Ingest Sysmon events for analysis."""
+    parser = get_sysmon_parser()
+    
+    processed = 0
+    alerts = 0
+    errors = []
+    
+    for event_data in req.events:
+        try:
+            if req.format == "xml":
+                event = parser.parse_xml(event_data.get("xml", ""))
+            else:
+                event = parser.parse_json(event_data)
+            
+            if event:
+                processed += 1
+                if event.alerts:
+                    alerts += 1
+        except Exception as e:
+            errors.append(str(e))
+    
+    return {
+        "success": True,
+        "processed": processed,
+        "alerts": alerts,
+        "errors": errors[:10],  # Limit errors in response
+    }
+
+
+@app.get("/api/edr/sysmon/events")
+async def get_sysmon_events(
+    limit: int = 100,
+    event_type: Optional[int] = None,
+):
+    """Get recent Sysmon events."""
+    parser = get_sysmon_parser()
+    events = parser.get_recent_events(limit=limit, event_type=event_type)
+    return {
+        "events": events,
+        "total": len(events),
+    }
+
+
+@app.get("/api/edr/sysmon/alerts")
+async def get_sysmon_alerts(limit: int = 50):
+    """Get recent Sysmon alerts."""
+    parser = get_sysmon_parser()
+    alerts = parser.get_recent_alerts(limit=limit)
+    return {
+        "alerts": alerts,
+        "total": len(alerts),
+    }
+
+
+@app.get("/api/edr/sysmon/stats")
+async def get_sysmon_stats():
+    """Get Sysmon parser statistics."""
+    parser = get_sysmon_parser()
+    return parser.get_stats()
+
+
+# --- Process Monitor Endpoints ---
+
+@app.get("/api/edr/processes")
+async def get_processes():
+    """Get currently running processes."""
+    monitor = get_process_monitor()
+    processes = monitor.get_current_processes()
+    return {
+        "processes": processes,
+        "total": len(processes),
+    }
+
+
+@app.get("/api/edr/processes/{pid}")
+async def get_process_detail(pid: int):
+    """Get detailed information about a specific process."""
+    monitor = get_process_monitor()
+    info = monitor.analyze_process(pid)
+    
+    if info is None:
+        raise HTTPException(status_code=404, detail="Process not found")
+    
+    return info
+
+
+@app.get("/api/edr/processes/events")
+async def get_process_events(
+    limit: int = 100,
+    event_type: Optional[str] = None,
+):
+    """Get recent process events."""
+    monitor = get_process_monitor()
+    events = monitor.get_recent_events(limit=limit, event_type=event_type)
+    return {
+        "events": events,
+        "total": len(events),
+    }
+
+
+@app.get("/api/edr/processes/alerts")
+async def get_process_alerts(limit: int = 50):
+    """Get recent process alerts."""
+    monitor = get_process_monitor()
+    alerts = monitor.get_recent_alerts(limit=limit)
+    return {
+        "alerts": alerts,
+        "total": len(alerts),
+    }
+
+
+@app.post("/api/edr/processes/monitor/start")
+async def start_process_monitor():
+    """Start the process monitor."""
+    monitor = get_process_monitor()
+    monitor.start()
+    return {
+        "success": True,
+        "message": "Process monitor started",
+        "stats": monitor.get_stats(),
+    }
+
+
+@app.post("/api/edr/processes/monitor/stop")
+async def stop_process_monitor():
+    """Stop the process monitor."""
+    monitor = get_process_monitor()
+    monitor.stop()
+    return {
+        "success": True,
+        "message": "Process monitor stopped",
+    }
+
+
+@app.get("/api/edr/processes/monitor/stats")
+async def get_process_monitor_stats():
+    """Get process monitor statistics."""
+    monitor = get_process_monitor()
+    return monitor.get_stats()
+
+
+# --- Threat Intelligence Endpoints ---
+
+@app.get("/api/edr/threat-intel/status")
+async def get_threat_intel_status():
+    """Get threat intelligence feed status."""
+    ti = get_threat_intel()
+    return {
+        "stats": ti.get_stats(),
+        "available_feeds": list(ti.FREE_FEEDS.keys()),
+    }
+
+
+@app.post("/api/edr/threat-intel/update")
+async def update_threat_intel_feeds(feed: Optional[str] = None):
+    """Update threat intelligence feeds."""
+    ti = get_threat_intel()
+    
+    if feed:
+        # Update specific feed
+        if feed not in ti.FREE_FEEDS:
+            raise HTTPException(status_code=400, detail=f"Unknown feed: {feed}")
+        count = await ti.update_feed(feed)
+        return {
+            "success": True,
+            "feed": feed,
+            "new_iocs": count,
+        }
+    else:
+        # Update all feeds
+        results = await ti.update_all_feeds()
+        return {
+            "success": True,
+            "results": results,
+            "stats": ti.get_stats(),
+        }
+
+
+class IoCCheckRequest(BaseModel):
+    """Request to check IoCs."""
+    values: list[str]
+
+
+@app.post("/api/edr/threat-intel/check")
+async def check_iocs(req: IoCCheckRequest):
+    """Check values against threat intelligence database."""
+    ti = get_threat_intel()
+    
+    results = []
+    for value in req.values:
+        match = ti.check_all(value)
+        results.append({
+            "value": value,
+            "match": match.to_dict() if match else None,
+            "is_malicious": match is not None,
+        })
+    
+    return {
+        "results": results,
+        "total_checked": len(req.values),
+        "matches": sum(1 for r in results if r["is_malicious"]),
+    }
+
+
+@app.get("/api/edr/threat-intel/search")
+async def search_iocs(
+    query: Optional[str] = None,
+    ioc_type: Optional[str] = None,
+    source: Optional[str] = None,
+    severity: Optional[str] = None,
+    limit: int = 100,
+):
+    """Search threat intelligence database."""
+    ti = get_threat_intel()
+    
+    from artemis.edr import IoCType
+    
+    type_filter = None
+    if ioc_type:
+        try:
+            type_filter = IoCType(ioc_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid IoC type: {ioc_type}")
+    
+    results = ti.search(
+        query=query,
+        ioc_type=type_filter,
+        source=source,
+        severity=severity,
+        limit=limit,
+    )
+    
+    return {
+        "results": [ioc.to_dict() for ioc in results],
+        "total": len(results),
+    }
+
+
+# --- Combined EDR Status ---
+
+@app.get("/api/edr/status")
+async def get_edr_status():
+    """Get overall EDR system status."""
+    sysmon = get_sysmon_parser()
+    process_mon = get_process_monitor()
+    ti = get_threat_intel()
+    
+    return {
+        "sysmon": sysmon.get_stats(),
+        "process_monitor": process_mon.get_stats(),
+        "threat_intel": ti.get_stats(),
+        "components": {
+            "sysmon": True,
+            "process_monitor": process_mon.stats.get("running", False),
+            "threat_intel": ti.stats.get("total_iocs", 0) > 0,
+        },
+    }
+
+
+@app.get("/api/edr/alerts")
+async def get_all_edr_alerts(limit: int = 50):
+    """Get all EDR alerts combined."""
+    sysmon = get_sysmon_parser()
+    process_mon = get_process_monitor()
+    
+    sysmon_alerts = sysmon.get_recent_alerts(limit=limit)
+    process_alerts = process_mon.get_recent_alerts(limit=limit)
+    
+    # Tag and combine
+    for alert in sysmon_alerts:
+        alert["source"] = "sysmon"
+    for alert in process_alerts:
+        alert["source"] = "process_monitor"
+    
+    # Combine and sort by timestamp
+    all_alerts = sysmon_alerts + process_alerts
+    all_alerts.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    return {
+        "alerts": all_alerts[:limit],
+        "total": len(all_alerts),
+        "by_source": {
+            "sysmon": len(sysmon_alerts),
+            "process_monitor": len(process_alerts),
+        },
+    }
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8000):
     """Run the web server."""
     import uvicorn
