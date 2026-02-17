@@ -23,12 +23,27 @@ try:
 except ImportError:
     SCAPY_AVAILABLE = False
 
+# Use built-in fingerprint module for MAC vendors
 try:
-    from mac_vendor_lookup import MacLookup
-    mac_lookup = MacLookup()
+    from artemis.agent.fingerprint import MAC_VENDORS
     MAC_LOOKUP_AVAILABLE = True
+    
+    def _sync_mac_lookup(mac: str) -> str:
+        """Synchronous MAC lookup using built-in database."""
+        if not mac:
+            return ""
+        # Normalize MAC to XX-XX-XX format (first 3 octets)
+        mac_clean = mac.upper().replace(':', '-').replace('.', '-')
+        if len(mac_clean) >= 8:
+            mac_prefix = mac_clean[:8]  # "XX-XX-XX"
+            result = MAC_VENDORS.get(mac_prefix)
+            if result:
+                return result[0] if isinstance(result, tuple) else result
+        return ""
 except ImportError:
     MAC_LOOKUP_AVAILABLE = False
+    MAC_VENDORS = {}
+    _sync_mac_lookup = lambda x: ""
 
 try:
     import dns.resolver
@@ -197,13 +212,125 @@ class NetworkMonitor:
         return ip
     
     def _lookup_vendor(self, mac: str) -> str:
-        """Look up MAC vendor."""
+        """Look up MAC vendor (synchronous)."""
         if MAC_LOOKUP_AVAILABLE:
             try:
-                return mac_lookup.lookup(mac)
+                return _sync_mac_lookup(mac)
             except Exception:
                 pass
         return ""
+    
+    def _classify_device(self, vendor: str, mac: str, hostname: str, ports: set = None) -> str:
+        """Classify device type based on vendor, MAC, hostname, and open ports."""
+        vendor_lower = vendor.lower() if vendor else ""
+        hostname_lower = hostname.lower() if hostname else ""
+        mac_upper = mac.upper() if mac else ""
+        ports = ports or set()
+        
+        # Check for locally administered MAC (randomized - mobile devices)
+        if mac_upper and len(mac_upper) >= 2:
+            first_byte = mac_upper[:2]
+            try:
+                if int(first_byte, 16) & 0x02:  # Locally administered bit set
+                    return "mobile"  # Likely iPhone/Android with MAC randomization
+            except ValueError:
+                pass
+        
+        # Router/Gateway indicators
+        router_vendors = ['eero', 'netgear', 'asus', 'tp-link', 'cisco', 'ubiquiti', 'linksys', 
+                         'dlink', 'd-link', 'huawei', 'zyxel', 'mikrotik', 'arris', 'motorola']
+        if any(v in vendor_lower for v in router_vendors):
+            # eero mesh routers
+            if 'eero' in vendor_lower:
+                return "router"
+            # If has web port, likely router
+            if ports & {80, 443, 8080, 8443}:
+                return "router"
+            return "network_device"
+        
+        # Apple devices
+        if 'apple' in vendor_lower:
+            # Apple TV ports
+            if ports & {3689, 5353, 7000, 7100}:
+                return "streaming_device"
+            # AirPlay/HomeKit
+            if ports & {62078}:
+                return "phone"
+            # macOS AFP/SMB
+            if ports & {548, 445}:
+                return "desktop"
+            # HomePod
+            if 'homepod' in hostname_lower:
+                return "smart_speaker"
+            return "apple_device"
+        
+        # Google/Nest devices
+        if any(v in vendor_lower for v in ['google', 'nest']):
+            if ports & {8008, 8443, 8009}:
+                return "streaming_device"  # Chromecast
+            if any(h in hostname_lower for h in ['home', 'nest', 'hub', 'mini']):
+                return "smart_speaker"
+            return "google_device"
+        
+        # Amazon devices
+        if 'amazon' in vendor_lower:
+            if any(h in hostname_lower for h in ['echo', 'alexa', 'fire']):
+                return "smart_speaker"
+            if 'kindle' in hostname_lower:
+                return "tablet"
+            return "amazon_device"
+        
+        # Smart TVs
+        tv_vendors = ['samsung', 'lg', 'sony', 'vizio', 'tcl', 'hisense', 'roku', 'philips']
+        if any(v in vendor_lower for v in tv_vendors):
+            if any(v in vendor_lower for v in ['roku']):
+                return "streaming_device"
+            return "smart_tv"
+        
+        # Gaming consoles
+        if 'microsoft' in vendor_lower and ports & {3074}:
+            return "gaming_console"
+        if 'sony' in vendor_lower and (ports & {9295, 9296, 9297} or 'playstation' in hostname_lower):
+            return "gaming_console"
+        if 'nintendo' in vendor_lower:
+            return "gaming_console"
+        
+        # Computers/Servers
+        if ports & {22}:  # SSH
+            return "server"
+        if ports & {3389}:  # RDP
+            return "desktop"
+        if ports & {5900, 5901}:  # VNC
+            return "desktop"
+        
+        # IoT devices
+        iot_vendors = ['espressif', 'tuya', 'shenzhen', 'wemo', 'philips hue', 'lifx', 'ring', 
+                       'wyze', 'tp-link kasa', 'eufy', 'arlo']
+        if any(v in vendor_lower for v in iot_vendors):
+            return "iot_device"
+        
+        # Mobile devices by vendor
+        mobile_vendors = ['samsung', 'huawei', 'xiaomi', 'oneplus', 'oppo', 'vivo', 'realme']
+        if any(v in vendor_lower for v in mobile_vendors):
+            # Could be phone or tablet
+            return "mobile"
+        
+        # Printer
+        printer_vendors = ['hp', 'canon', 'epson', 'brother', 'xerox', 'lexmark']
+        if any(v in vendor_lower for v in printer_vendors) or ports & {631, 9100}:
+            return "printer"
+        
+        # ASUSTek - could be router, desktop, or phone
+        if 'asus' in vendor_lower or 'asustek' in vendor_lower:
+            if ports & {80, 443}:
+                return "router"
+            return "desktop"
+        
+        # Intel/Realtek - typically desktops/laptops
+        if any(v in vendor_lower for v in ['intel', 'realtek']):
+            return "desktop"
+        
+        return "unknown"
     
     def _packet_capture_loop(self):
         """Background packet capture with scapy."""
@@ -248,13 +375,19 @@ class NetworkMonitor:
         with self._lock:
             if ip not in self.devices:
                 vendor = self._lookup_vendor(mac)
+                hostname = self._resolve_hostname(ip)
+                device_type = self._classify_device(vendor, mac, hostname)
+                
                 device = DeviceStats(
                     ip=ip,
                     mac=mac,
                     vendor=vendor,
-                    hostname=self._resolve_hostname(ip),
+                    hostname=hostname,
+                    device_type=device_type,
                 )
                 self.devices[ip] = device
+                
+                logger.info(f"New device: {ip} ({vendor}) -> {device_type}")
                 
                 if self._on_device:
                     asyncio.run_coroutine_threadsafe(
@@ -262,7 +395,18 @@ class NetworkMonitor:
                         asyncio.get_event_loop()
                     )
             else:
-                self.devices[ip].last_seen = datetime.now(timezone.utc)
+                # Update device type if we have more info now
+                device = self.devices[ip]
+                device.last_seen = datetime.now(timezone.utc)
+                
+                # Re-classify if still unknown and we have ports now
+                if device.device_type == "unknown" and device.ports_used:
+                    new_type = self._classify_device(
+                        device.vendor, device.mac, device.hostname, device.ports_used
+                    )
+                    if new_type != "unknown":
+                        device.device_type = new_type
+                        logger.info(f"Reclassified {ip}: {new_type}")
     
     def _handle_ip_packet(self, pkt):
         """Handle IP packet for traffic tracking."""
@@ -495,14 +639,15 @@ class NetworkMonitor:
                     # Get or create device
                     if ip not in self.devices:
                         vendor = self._lookup_vendor(mac)
-                        device_type = self._classify_device(mac, ip, vendor)
+                        hostname = self._resolve_hostname(ip)
+                        device_type = self._classify_device(vendor, mac, hostname)
                         
                         self.devices[ip] = DeviceStats(
                             ip=ip,
                             mac=mac,
                             vendor=vendor,
                             device_type=device_type,
-                            hostname=ip,
+                            hostname=hostname,
                         )
                     
                     devices.append({
@@ -522,43 +667,6 @@ class NetworkMonitor:
         
         return devices
     
-    def _classify_device(self, mac: str, ip: str, vendor: str) -> str:
-        """Classify device type based on MAC vendor."""
-        vendor_lower = vendor.lower() if vendor else ""
-        
-        # Check for randomized MAC
-        first_byte = int(mac[:2], 16)
-        if first_byte & 0x02:
-            return "mobile"  # Locally administered = likely randomized
-        
-        # Gateway detection
-        if ip.endswith(".1"):
-            return "router"
-        
-        # Vendor-based classification
-        type_keywords = {
-            "router": ["cisco", "netgear", "tp-link", "linksys", "ubiquiti", "asus", "d-link", "arris", "motorola"],
-            "mobile": ["apple", "samsung", "huawei", "xiaomi", "oneplus", "google pixel", "lg electronics"],
-            "tv": ["lg tv", "samsung tv", "sony", "vizio", "tcl", "hisense", "roku"],
-            "media": ["roku", "amazon", "chromecast", "fire tv", "apple tv"],
-            "iot": ["nest", "ring", "philips hue", "sonos", "ecobee", "wyze", "eufy", "tuya"],
-            "console": ["nintendo", "playstation", "xbox", "sony computer"],
-            "server": ["vmware", "hyper-v", "virtualbox", "qemu"],
-            "printer": ["hp inc", "canon", "epson", "brother", "xerox", "lexmark"],
-        }
-        
-        for device_type, keywords in type_keywords.items():
-            for keyword in keywords:
-                if keyword in vendor_lower:
-                    return device_type
-        
-        # Intel/Realtek usually means desktop/laptop
-        if any(x in vendor_lower for x in ["intel", "realtek", "dell", "lenovo", "hewlett", "acer", "asus"]):
-            return "desktop"
-        
-        return "unknown"
-
-
 # Global monitor instance
 _monitor: Optional[NetworkMonitor] = None
 

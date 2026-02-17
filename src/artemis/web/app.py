@@ -262,6 +262,138 @@ async def validate_rule(req: ValidateRequest):
 
 
 # ============================================================================
+# AI Analysis Endpoints
+# ============================================================================
+
+class AIAnalysisRequest(BaseModel):
+    """Request for AI analysis."""
+    context: Optional[str] = None
+    connections: Optional[list] = None
+    threats: Optional[list] = None
+    devices: Optional[list] = None
+    model: str = "deepseek-r1:70b"
+
+
+class AIAnalysisResponse(BaseModel):
+    """AI analysis response."""
+    success: bool
+    analysis: Optional[str] = None
+    risk_level: Optional[int] = None
+    recommendations: list[str] = []
+    error: Optional[str] = None
+
+
+@app.post("/api/ai/analyze", response_model=AIAnalysisResponse)
+async def ai_analyze_security(req: AIAnalysisRequest):
+    """Run AI analysis on current security context."""
+    from artemis.llm import get_provider
+    
+    try:
+        provider = get_provider("ollama", model=req.model)
+        
+        # Build context
+        context_parts = []
+        
+        if req.connections:
+            suspicious = [c for c in req.connections if c.get('suspicious')]
+            context_parts.append(f"Active connections: {len(req.connections)}")
+            if suspicious:
+                context_parts.append(f"Suspicious connections: {len(suspicious)}")
+                for conn in suspicious[:5]:
+                    context_parts.append(f"  - {conn.get('process', 'unknown')} -> {conn.get('remote', 'unknown')}")
+        
+        if req.threats:
+            context_parts.append(f"Recent threats: {len(req.threats)}")
+            for threat in req.threats[:5]:
+                context_parts.append(f"  - [{threat.get('severity', 'unknown')}] {threat.get('title', 'Unknown threat')}")
+        
+        if req.devices:
+            context_parts.append(f"Devices on network: {len(req.devices)}")
+        
+        if req.context:
+            context_parts.append(f"Additional context: {req.context}")
+        
+        context_str = "\n".join(context_parts) if context_parts else "No specific context provided."
+        
+        system_prompt = """You are a cybersecurity analyst AI embedded in a home network security dashboard.
+Your job is to analyze network activity and identify potential threats.
+Be concise but thorough. Focus on actionable insights.
+Format your response as:
+RISK LEVEL: [1-10]
+ANALYSIS: [brief analysis]
+RECOMMENDATIONS:
+- [action 1]
+- [action 2]
+"""
+        
+        prompt = f"""Analyze this network security context:
+
+{context_str}
+
+Provide your security assessment."""
+
+        response = await provider.generate(prompt, system=system_prompt)
+        
+        # Parse response
+        risk_level = 1
+        recommendations = []
+        
+        lines = response.split('\n')
+        for line in lines:
+            if 'RISK LEVEL:' in line.upper():
+                try:
+                    risk_level = int(''.join(filter(str.isdigit, line.split(':')[1][:3])))
+                except:
+                    pass
+            if line.strip().startswith('-'):
+                recommendations.append(line.strip()[1:].strip())
+        
+        return AIAnalysisResponse(
+            success=True,
+            analysis=response,
+            risk_level=min(10, max(1, risk_level)),
+            recommendations=recommendations[:5],
+        )
+        
+    except Exception as e:
+        return AIAnalysisResponse(
+            success=False,
+            error=str(e),
+        )
+
+
+@app.post("/api/ai/analyze-connection")
+async def ai_analyze_connection(
+    process: str,
+    remote: str,
+    port: int,
+    model: str = "qwen3:14b"  # Use faster model for quick analysis
+):
+    """Quick AI analysis of a specific connection."""
+    from artemis.llm import get_provider
+    
+    try:
+        provider = get_provider("ollama", model=model)
+        
+        prompt = f"""Is this network connection suspicious?
+Process: {process}
+Remote: {remote}
+Port: {port}
+
+Reply in 2-3 sentences: what this connection likely is, and if it's suspicious."""
+
+        response = await provider.generate(prompt)
+        
+        return {
+            "success": True,
+            "analysis": response.strip(),
+            "suspicious": any(word in response.lower() for word in ['suspicious', 'malicious', 'concerning', 'unusual']),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================================
 # Pentest API Endpoints
 # ============================================================================
 
