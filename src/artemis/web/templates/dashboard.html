@@ -57,32 +57,22 @@
         }
 
         .sidebar-header {
-            padding: 1.5rem 0.75rem 1.25rem;
+            padding: 0.75rem;
             border-bottom: 1px solid var(--border);
             background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 60%, transparent 100%);
         }
 
         .logo {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 0.25rem;
+            justify-content: center;
         }
 
         .logo-img {
-            width: 140px;
-            height: 140px;
+            width: 170px;
+            height: 170px;
             object-fit: contain;
             filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 60px rgba(245, 158, 11, 0.25));
-        }
-
-        .logo-text {
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--accent);
-            letter-spacing: 0.2em;
-            text-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
-            margin-top: -0.25rem;
         }
 
         .nav-section {
@@ -426,16 +416,31 @@
         /* Connection Table */
         .conn-row {
             display: grid;
-            grid-template-columns: 110px 1fr 80px 70px;
-            padding: 0.4rem 0.5rem;
+            grid-template-columns: 100px 1fr 75px;
+            padding: 0.35rem 0.5rem;
             border-bottom: 1px solid var(--border);
             align-items: center;
+            gap: 0.5rem;
             font-size: 0.75rem;
         }
 
         .conn-row:hover { background: var(--bg-hover); }
-        .conn-process { color: var(--accent); font-weight: 500; }
-        .conn-remote { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+        .conn-process { 
+            color: var(--accent); 
+            font-weight: 500; 
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .conn-remote { 
+            color: var(--text-secondary); 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 0.7rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .conn-port { color: var(--accent-dim); font-family: 'JetBrains Mono', monospace; }
         
         .conn-state {
@@ -846,7 +851,6 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <img src="/static/images/Logo_Only.png" alt="Artemis" class="logo-img">
-                    <span class="logo-text">ARTEMIS</span>
                 </div>
             </div>
             <nav class="nav-section" id="mainNav">
