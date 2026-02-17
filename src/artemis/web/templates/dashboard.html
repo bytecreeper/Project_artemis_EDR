@@ -1321,124 +1321,236 @@
                         </div>
                     </div>
                     
-                    <!-- EDR Stats -->
-                    <div class="stats-row" style="margin-bottom: 0.875rem; grid-template-columns: repeat(5, 1fr);">
-                        <div class="stat-card">
-                            <div class="stat-label">Process Monitor</div>
-                            <div class="stat-value" id="edrProcessStatus" style="font-size: 0.9rem;">Stopped</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Processes Seen</div>
-                            <div class="stat-value accent" id="edrProcessesSeen">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Sysmon Events</div>
-                            <div class="stat-value" id="edrSysmonEvents">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Threat Intel IoCs</div>
-                            <div class="stat-value warning" id="edrTotalIocs">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">EDR Alerts</div>
-                            <div class="stat-value danger" id="edrTotalAlerts">0</div>
-                        </div>
+                    <!-- EDR Sub-tabs -->
+                    <div style="display: flex; gap: 0.25rem; margin-bottom: 0.875rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                        <button class="btn btn-secondary edr-tab active" data-tab="overview" onclick="switchEdrTab('overview')">Overview</button>
+                        <button class="btn btn-secondary edr-tab" data-tab="hunting" onclick="switchEdrTab('hunting')">Threat Hunt</button>
+                        <button class="btn btn-secondary edr-tab" data-tab="response" onclick="switchEdrTab('response')">Response</button>
+                        <button class="btn btn-secondary edr-tab" data-tab="mitre" onclick="switchEdrTab('mitre')">MITRE ATT&CK</button>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
-                        <!-- Process Monitor Control -->
-                        <div class="card">
-                            <div class="card-header">
-                                <span>Process Monitor</span>
-                                <div style="display: flex; gap: 0.5rem;">
+                    <!-- Overview Tab -->
+                    <div class="edr-tab-content" id="edr-overview">
+                        <!-- Security Posture + Stats Row -->
+                        <div style="display: grid; grid-template-columns: 180px 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
+                            <!-- Risk Score Card -->
+                            <div class="card" style="text-align: center;">
+                                <div class="card-header"><span>Security Posture</span></div>
+                                <div class="card-body" style="padding: 1rem;">
+                                    <div id="edrRiskGrade" style="font-size: 3rem; font-weight: 700; line-height: 1;">B</div>
+                                    <div style="font-size: 2rem; font-weight: 600; color: var(--accent);" id="edrRiskScore">75</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">out of 100</div>
+                                    <div id="edrRiskTrend" style="margin-top: 0.5rem; font-size: 0.8rem;">
+                                        <span style="color: var(--success);">↑ Improving</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stats Row -->
+                            <div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
+                                <div class="stat-card">
+                                    <div class="stat-label">Process Monitor</div>
+                                    <div class="stat-value" id="edrProcessStatus" style="font-size: 0.9rem;">Stopped</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Processes</div>
+                                    <div class="stat-value accent" id="edrProcessesSeen">0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Sysmon</div>
+                                    <div class="stat-value" id="edrSysmonEvents">0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">IoCs</div>
+                                    <div class="stat-value warning" id="edrTotalIocs">0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Alerts</div>
+                                    <div class="stat-value danger" id="edrTotalAlerts">0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendations -->
+                        <div class="card" style="margin-bottom: 0.875rem;" id="edrRecommendations">
+                            <div class="card-header"><span>🎯 Recommendations</span></div>
+                            <div class="card-body" id="edrRecommendationsList" style="padding: 0.75rem; font-size: 0.85rem;">
+                                <div style="color: var(--text-muted);">Loading...</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
+                            <!-- Process Monitor Control -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <span>Process Monitor</span>
                                     <button class="btn btn-secondary" id="btnToggleProcessMon" onclick="toggleProcessMonitor()">Start</button>
                                 </div>
+                                <div class="card-body" style="padding: 0.75rem;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+                                        <div><span style="color: var(--text-muted);">WMI:</span> <span id="edrWmiEnabled">—</span></div>
+                                        <div><span style="color: var(--text-muted);">Started:</span> <span id="edrStartTime">—</span></div>
+                                        <div><span style="color: var(--text-muted);">Alerts:</span> <span id="edrProcessAlerts" style="color: var(--danger);">0</span></div>
+                                        <div><span style="color: var(--text-muted);">Processes:</span> <span id="edrCurrentProcs">—</span></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body" style="padding: 0.75rem;">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
-                                    <div>
-                                        <span style="color: var(--text-muted);">WMI Events:</span>
-                                        <span id="edrWmiEnabled">—</span>
+
+                            <!-- Threat Intel Status -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <span>Threat Intelligence</span>
+                                    <span id="edrTiLastUpdate" style="font-size: 0.7rem; color: var(--text-muted);">Never</span>
+                                </div>
+                                <div class="card-body" style="padding: 0.75rem;">
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.75rem; text-align: center;">
+                                        <div><div style="color: var(--text-muted);">IPs</div><div style="font-size: 1rem; font-weight: 600;" id="edrTiIps">0</div></div>
+                                        <div><div style="color: var(--text-muted);">Domains</div><div style="font-size: 1rem; font-weight: 600;" id="edrTiDomains">0</div></div>
+                                        <div><div style="color: var(--text-muted);">Hashes</div><div style="font-size: 1rem; font-weight: 600;" id="edrTiHashes">0</div></div>
                                     </div>
-                                    <div>
-                                        <span style="color: var(--text-muted);">Started:</span>
-                                        <span id="edrStartTime">—</span>
-                                    </div>
-                                    <div>
-                                        <span style="color: var(--text-muted);">Alerts Generated:</span>
-                                        <span id="edrProcessAlerts" style="color: var(--danger);">0</span>
-                                    </div>
-                                    <div>
-                                        <span style="color: var(--text-muted);">Current Processes:</span>
-                                        <span id="edrCurrentProcs">—</span>
+                                    <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                                        <input type="text" class="form-input" id="edrIocCheck" placeholder="Check IoC..." style="flex: 1; font-size: 0.8rem;">
+                                        <button class="btn btn-secondary" onclick="checkIoc()">Check</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Threat Intel Status -->
-                        <div class="card">
+                        <!-- EDR Alerts -->
+                        <div class="card" style="margin-bottom: 0.875rem;">
                             <div class="card-header">
-                                <span>Threat Intelligence</span>
-                                <span id="edrTiLastUpdate" style="font-size: 0.75rem; color: var(--text-muted);">Never updated</span>
+                                <span>🚨 Active Alerts</span>
+                                <span id="edrAlertCount" style="font-size: 0.75rem; padding: 0.125rem 0.5rem; background: var(--danger); color: white; border-radius: 4px;">0</span>
                             </div>
-                            <div class="card-body" style="padding: 0.75rem;">
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; font-size: 0.75rem;">
-                                    <div style="text-align: center;">
-                                        <div style="color: var(--text-muted);">IPs</div>
-                                        <div style="font-size: 1rem; font-weight: 600;" id="edrTiIps">0</div>
-                                    </div>
-                                    <div style="text-align: center;">
-                                        <div style="color: var(--text-muted);">Domains</div>
-                                        <div style="font-size: 1rem; font-weight: 600;" id="edrTiDomains">0</div>
-                                    </div>
-                                    <div style="text-align: center;">
-                                        <div style="color: var(--text-muted);">Hashes</div>
-                                        <div style="font-size: 1rem; font-weight: 600;" id="edrTiHashes">0</div>
-                                    </div>
+                            <div class="card-body" id="edrAlertsList" style="max-height: 200px; overflow-y: auto;">
+                                <div class="empty-state"><div class="empty-icon">✓</div><div>No alerts</div></div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem;">
+                            <div class="card">
+                                <div class="card-header"><span>Process Events</span><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadProcessEvents()">↻</button></div>
+                                <div class="card-body" id="edrProcessEvents" style="max-height: 250px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;">
+                                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">Start monitor</div>
                                 </div>
-                                <div style="margin-top: 0.75rem;">
-                                    <input type="text" class="form-input" id="edrIocCheck" placeholder="Check IP, domain, or hash..." style="width: 100%; font-size: 0.8rem;">
-                                    <button class="btn btn-secondary" style="margin-top: 0.5rem; width: 100%;" onclick="checkIoc()">Check IoC</button>
+                            </div>
+                            <div class="card">
+                                <div class="card-header"><span>Running Processes</span><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadRunningProcesses()">↻</button></div>
+                                <div class="card-body" id="edrRunningProcesses" style="max-height: 250px; overflow-y: auto; font-size: 0.75rem;">
+                                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">Click refresh</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- EDR Alerts -->
-                    <div class="card" style="margin-bottom: 0.875rem;">
-                        <div class="card-header">
-                            <span>🚨 EDR Alerts</span>
-                            <span id="edrAlertCount" style="font-size: 0.75rem; padding: 0.125rem 0.5rem; background: var(--danger); color: white; border-radius: 4px;">0</span>
+                    <!-- Threat Hunting Tab -->
+                    <div class="edr-tab-content" id="edr-hunting" style="display: none;">
+                        <div class="card" style="margin-bottom: 0.875rem;">
+                            <div class="card-header"><span>🔍 Threat Hunting</span></div>
+                            <div class="card-body" style="padding: 0.75rem;">
+                                <div style="margin-bottom: 0.75rem;">
+                                    <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Hunt Query</label>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" class="form-input" id="huntQuery" placeholder="e.g., subject:powershell AND severity:high" style="flex: 1;">
+                                        <button class="btn btn-primary" onclick="executeHunt()">Hunt</button>
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                    <strong>Syntax:</strong> field:value | field:*contains* | field:>number | AND/OR
+                                    <br><strong>Fields:</strong> subject, action, event_type, severity, target
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body" id="edrAlertsList" style="max-height: 250px; overflow-y: auto;">
-                            <div class="empty-state">
-                                <div class="empty-icon">✓</div>
-                                <div>No alerts detected</div>
+                        
+                        <div class="card">
+                            <div class="card-header"><span>Hunt Results</span><span id="huntResultCount" style="font-size: 0.75rem; color: var(--text-muted);">0 results</span></div>
+                            <div class="card-body" id="huntResults" style="max-height: 400px; overflow-y: auto; font-size: 0.8rem;">
+                                <div style="color: var(--text-muted); text-align: center; padding: 2rem;">Enter a query and click Hunt</div>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem;">
-                        <!-- Recent Process Events -->
-                        <div class="card">
-                            <div class="card-header">
-                                <span>Recent Process Events</span>
-                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadProcessEvents()">Refresh</button>
+                    <!-- Response Actions Tab -->
+                    <div class="edr-tab-content" id="edr-response" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem;">
+                            <!-- Kill Process -->
+                            <div class="card">
+                                <div class="card-header"><span>💀 Kill Process</span></div>
+                                <div class="card-body" style="padding: 0.75rem;">
+                                    <input type="number" class="form-input" id="killPid" placeholder="PID" style="width: 100%; margin-bottom: 0.5rem;">
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-danger" onclick="killProcess(false)" style="flex: 1;">Terminate</button>
+                                        <button class="btn btn-danger" onclick="killProcess(true)" title="Force kill">Force</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body" id="edrProcessEvents" style="max-height: 300px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">
-                                <div style="color: var(--text-muted); text-align: center; padding: 1rem;">Start process monitor to see events</div>
+
+                            <!-- Block IP -->
+                            <div class="card">
+                                <div class="card-header"><span>🚫 Block IP</span></div>
+                                <div class="card-body" style="padding: 0.75rem;">
+                                    <input type="text" class="form-input" id="blockIp" placeholder="IP Address" style="width: 100%; margin-bottom: 0.5rem;">
+                                    <button class="btn btn-warning" onclick="blockIpAction()" style="width: 100%;">Block in Firewall</button>
+                                </div>
+                            </div>
+
+                            <!-- Quarantine File -->
+                            <div class="card">
+                                <div class="card-header"><span>🔒 Quarantine File</span></div>
+                                <div class="card-body" style="padding: 0.75rem;">
+                                    <input type="text" class="form-input" id="quarantinePath" placeholder="File path" style="width: 100%; margin-bottom: 0.5rem;">
+                                    <button class="btn btn-warning" onclick="quarantineFile()" style="width: 100%;">Quarantine</button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Running Processes -->
-                        <div class="card">
-                            <div class="card-header">
-                                <span>Running Processes</span>
-                                <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadRunningProcesses()">Refresh</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem;">
+                            <!-- Blocked IPs -->
+                            <div class="card">
+                                <div class="card-header"><span>Blocked IPs</span><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadBlockedIps()">↻</button></div>
+                                <div class="card-body" id="blockedIpsList" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem;">
+                                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">No blocked IPs</div>
+                                </div>
                             </div>
-                            <div class="card-body" id="edrRunningProcesses" style="max-height: 300px; overflow-y: auto; font-size: 0.75rem;">
-                                <div style="color: var(--text-muted); text-align: center; padding: 1rem;">Click refresh to load</div>
+
+                            <!-- Quarantined Files -->
+                            <div class="card">
+                                <div class="card-header"><span>Quarantined Files</span><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadQuarantinedFiles()">↻</button></div>
+                                <div class="card-body" id="quarantinedFilesList" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem;">
+                                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">No quarantined files</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Response History -->
+                        <div class="card" style="margin-top: 0.875rem;">
+                            <div class="card-header"><span>Response History</span></div>
+                            <div class="card-body" id="responseHistory" style="max-height: 200px; overflow-y: auto; font-size: 0.8rem;">
+                                <div style="color: var(--text-muted); text-align: center; padding: 1rem;">No actions yet</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MITRE ATT&CK Tab -->
+                    <div class="edr-tab-content" id="edr-mitre" style="display: none;">
+                        <div class="card">
+                            <div class="card-header"><span>MITRE ATT&CK Coverage</span><button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="loadMitreCoverage()">↻</button></div>
+                            <div class="card-body" style="padding: 0.75rem;">
+                                <div id="mitreSummary" style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.85rem;">
+                                    <div><strong>Techniques Detected:</strong> <span id="mitreDetectedCount">0</span></div>
+                                    <div><strong>Coverage:</strong> <span id="mitreCoveragePercent">0%</span></div>
+                                </div>
+                                <div id="mitreHeatmap" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem;">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detected Techniques -->
+                        <div class="card" style="margin-top: 0.875rem;">
+                            <div class="card-header"><span>Detected Techniques</span></div>
+                            <div class="card-body" id="mitreDetectedList" style="max-height: 300px; overflow-y: auto; font-size: 0.8rem;">
+                                <div style="color: var(--text-muted); text-align: center; padding: 1rem;">No techniques detected yet</div>
                             </div>
                         </div>
                     </div>
@@ -3817,6 +3929,273 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 console.error('Failed to load running processes:', e);
             }
         }
+        
+        // EDR Tab switching
+        function switchEdrTab(tabName) {
+            document.querySelectorAll('.edr-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.edr-tab-content').forEach(content => {
+                content.style.display = content.id === `edr-${tabName}` ? 'block' : 'none';
+            });
+            
+            // Load tab-specific data
+            if (tabName === 'overview') loadSecurityPosture();
+            if (tabName === 'mitre') loadMitreCoverage();
+            if (tabName === 'response') { loadBlockedIps(); loadQuarantinedFiles(); loadResponseHistory(); }
+        }
+        
+        async function loadSecurityPosture() {
+            try {
+                const resp = await fetch('/api/edr/posture');
+                const data = await resp.json();
+                
+                document.getElementById('edrRiskScore').textContent = data.score || 0;
+                document.getElementById('edrRiskGrade').textContent = data.grade || '?';
+                
+                // Color the grade
+                const gradeColors = { 'A': 'var(--success)', 'B': '#22c55e', 'C': 'var(--warning)', 'D': 'var(--danger)', 'F': 'var(--critical)' };
+                document.getElementById('edrRiskGrade').style.color = gradeColors[data.grade] || 'var(--text-primary)';
+                
+                // Trend
+                const trendEl = document.getElementById('edrRiskTrend');
+                if (data.trend === 'improving') {
+                    trendEl.innerHTML = '<span style="color: var(--success);">↑ Improving</span>';
+                } else if (data.trend === 'declining') {
+                    trendEl.innerHTML = '<span style="color: var(--danger);">↓ Declining</span>';
+                } else {
+                    trendEl.innerHTML = '<span style="color: var(--text-muted);">→ Stable</span>';
+                }
+                
+                // Recommendations
+                const recList = document.getElementById('edrRecommendationsList');
+                if (data.recommendations && data.recommendations.length > 0) {
+                    recList.innerHTML = data.recommendations.map(r => 
+                        `<div style="padding: 0.375rem 0; border-bottom: 1px solid var(--border);">${escapeHtml(r)}</div>`
+                    ).join('');
+                } else {
+                    recList.innerHTML = '<div style="color: var(--success);">✓ All systems optimal</div>';
+                }
+                
+            } catch (e) {
+                console.error('Failed to load security posture:', e);
+            }
+        }
+        
+        async function executeHunt() {
+            const query = document.getElementById('huntQuery').value.trim();
+            if (!query) {
+                alert('Please enter a hunt query');
+                return;
+            }
+            
+            try {
+                const resp = await fetch('/api/edr/hunt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit: 100 })
+                });
+                const data = await resp.json();
+                
+                document.getElementById('huntResultCount').textContent = `${data.total || 0} results`;
+                
+                const container = document.getElementById('huntResults');
+                if (!data.results || data.results.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 2rem;">No matches found</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.results.map(e => `
+                    <div style="padding: 0.5rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--accent);">${escapeHtml(e.event_type)}:${escapeHtml(e.action)}</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">${e.timestamp ? new Date(e.timestamp).toLocaleString() : ''}</span>
+                        </div>
+                        <div><strong>${escapeHtml(e.subject)}</strong> → ${escapeHtml(e.target || '')}</div>
+                        ${e.severity !== 'info' ? `<span style="color: var(--${e.severity === 'critical' ? 'critical' : e.severity === 'high' ? 'danger' : 'warning'});">[${e.severity}]</span>` : ''}
+                    </div>
+                `).join('');
+                
+            } catch (e) {
+                alert('Hunt failed: ' + e.message);
+            }
+        }
+        
+        async function killProcess(force = false) {
+            const pid = document.getElementById('killPid').value;
+            if (!pid) { alert('Enter a PID'); return; }
+            
+            if (!confirm(`Kill process ${pid}${force ? ' (FORCE)' : ''}?`)) return;
+            
+            try {
+                const resp = await fetch('/api/edr/response/kill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pid: parseInt(pid), force })
+                });
+                const data = await resp.json();
+                alert(data.status === 'completed' ? `✓ ${data.result}` : `✗ ${data.error}`);
+                loadResponseHistory();
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+        
+        async function blockIpAction() {
+            const ip = document.getElementById('blockIp').value.trim();
+            if (!ip) { alert('Enter an IP'); return; }
+            
+            if (!confirm(`Block IP ${ip} in firewall?`)) return;
+            
+            try {
+                const resp = await fetch('/api/edr/response/block-ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip, direction: 'both' })
+                });
+                const data = await resp.json();
+                alert(data.status === 'completed' ? `✓ ${data.result}` : `✗ ${data.error}`);
+                loadBlockedIps();
+                loadResponseHistory();
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+        
+        async function unblockIp(ip) {
+            if (!confirm(`Unblock IP ${ip}?`)) return;
+            try {
+                await fetch(`/api/edr/response/unblock-ip?ip=${encodeURIComponent(ip)}`, { method: 'POST' });
+                loadBlockedIps();
+                loadResponseHistory();
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+        
+        async function quarantineFile() {
+            const path = document.getElementById('quarantinePath').value.trim();
+            if (!path) { alert('Enter a file path'); return; }
+            
+            if (!confirm(`Quarantine file: ${path}?`)) return;
+            
+            try {
+                const resp = await fetch('/api/edr/response/quarantine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path, delete_original: true })
+                });
+                const data = await resp.json();
+                alert(data.status === 'completed' ? `✓ ${data.result}` : `✗ ${data.error}`);
+                loadQuarantinedFiles();
+                loadResponseHistory();
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+        
+        async function loadBlockedIps() {
+            try {
+                const resp = await fetch('/api/edr/response/blocked-ips');
+                const data = await resp.json();
+                const container = document.getElementById('blockedIpsList');
+                
+                if (!data.ips || data.ips.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">No blocked IPs</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.ips.map(ip => `
+                    <div style="display: flex; justify-content: space-between; padding: 0.375rem; border-bottom: 1px solid var(--border);">
+                        <span style="font-family: monospace;">${escapeHtml(ip)}</span>
+                        <button class="btn btn-secondary" style="padding: 0.1rem 0.3rem; font-size: 0.7rem;" onclick="unblockIp('${escapeHtml(ip)}')">Unblock</button>
+                    </div>
+                `).join('');
+            } catch (e) { console.error('Failed to load blocked IPs:', e); }
+        }
+        
+        async function loadQuarantinedFiles() {
+            try {
+                const resp = await fetch('/api/edr/response/quarantine');
+                const data = await resp.json();
+                const container = document.getElementById('quarantinedFilesList');
+                
+                if (!data.files || data.files.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">No quarantined files</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.files.map(f => `
+                    <div style="padding: 0.375rem; border-bottom: 1px solid var(--border);">
+                        <div style="font-size: 0.75rem; word-break: break-all;">${escapeHtml(f.original_path)}</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted);">SHA256: ${f.sha256?.slice(0, 16)}...</div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error('Failed to load quarantined files:', e); }
+        }
+        
+        async function loadResponseHistory() {
+            try {
+                const resp = await fetch('/api/edr/response/history?limit=20');
+                const data = await resp.json();
+                const container = document.getElementById('responseHistory');
+                
+                if (!data.actions || data.actions.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">No actions yet</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.actions.map(a => `
+                    <div style="display: flex; justify-content: space-between; padding: 0.375rem; border-bottom: 1px solid var(--border);">
+                        <span><strong>${a.action_type}</strong>: ${escapeHtml(a.target)}</span>
+                        <span style="color: ${a.status === 'completed' ? 'var(--success)' : 'var(--danger)'};">${a.status}</span>
+                    </div>
+                `).join('');
+            } catch (e) { console.error('Failed to load response history:', e); }
+        }
+        
+        async function loadMitreCoverage() {
+            try {
+                const resp = await fetch('/api/edr/mitre');
+                const data = await resp.json();
+                
+                const coverage = data.coverage || {};
+                document.getElementById('mitreDetectedCount').textContent = coverage.total_techniques_detected || 0;
+                const pct = coverage.total_techniques_known > 0 
+                    ? Math.round((coverage.total_techniques_detected / coverage.total_techniques_known) * 100) 
+                    : 0;
+                document.getElementById('mitreCoveragePercent').textContent = pct + '%';
+                
+                // Render heatmap
+                const heatmap = document.getElementById('mitreHeatmap');
+                const tactics = coverage.tactics || [];
+                
+                heatmap.innerHTML = tactics.map(t => `
+                    <div style="background: ${t.techniques_detected > 0 ? t.color + '40' : 'var(--bg-tertiary)'}; padding: 0.5rem; border-radius: 4px; text-align: center; border: 1px solid ${t.techniques_detected > 0 ? t.color : 'var(--border)'};">
+                        <div style="font-size: 0.65rem; color: var(--text-muted);">${t.id}</div>
+                        <div style="font-size: 0.75rem; font-weight: 500;">${t.name}</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: ${t.color};">${t.techniques_detected}</div>
+                    </div>
+                `).join('');
+                
+                // Detected techniques list
+                const detectedList = document.getElementById('mitreDetectedList');
+                const allTechniques = tactics.flatMap(t => t.techniques || []);
+                
+                if (allTechniques.length === 0) {
+                    detectedList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">No techniques detected yet</div>';
+                } else {
+                    detectedList.innerHTML = allTechniques.map(t => `
+                        <div style="padding: 0.375rem; border-bottom: 1px solid var(--border);">
+                            <span style="font-family: monospace; color: var(--accent);">${t.id}</span>
+                            <span style="margin-left: 0.5rem;">${escapeHtml(t.name)}</span>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (e) { 
+                console.error('Failed to load MITRE coverage:', e); 
+            }
+        }
+        
+        // Update loadEdrStatus to also load posture
+        const originalLoadEdrStatus = loadEdrStatus;
+        loadEdrStatus = async function() {
+            await originalLoadEdrStatus();
+            await loadSecurityPosture();
+        };
         
         // Initial load if starting on EDR view
         if (document.querySelector('.nav-item[data-view="edr"].active')) {
