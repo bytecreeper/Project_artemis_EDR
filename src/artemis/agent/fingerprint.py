@@ -1228,6 +1228,14 @@ MAC_VENDORS = {
     "F0-9F-C2": ("Ubiquiti", "ubiquiti"),
     "FC-EC-DA": ("Ubiquiti", "ubiquiti"),
 
+    # eero (Amazon mesh routers)
+    "D8-8E-D4": ("eero", "eero"),
+    "50-EB-71": ("eero", "eero"),
+    "A4-7B-9D": ("eero", "eero"),
+    "F0-81-75": ("eero", "eero"),
+    "34-20-03": ("eero", "eero"),
+    "68-FF-7B": ("eero", "eero"),
+
     # Netgear
     "00-09-5B": ("Netgear", "netgear"),
     "00-0F-B5": ("Netgear", "netgear"),

@@ -236,14 +236,14 @@ class NetworkMonitor:
             except ValueError:
                 pass
         
-        # Router/Gateway indicators
-        router_vendors = ['eero', 'netgear', 'asus', 'tp-link', 'cisco', 'ubiquiti', 'linksys', 
-                         'dlink', 'd-link', 'huawei', 'zyxel', 'mikrotik', 'arris', 'motorola']
+        # Router/Gateway indicators (always router, no port check needed)
+        router_vendors = ['eero', 'netgear', 'ubiquiti', 'linksys', 'cisco', 'mikrotik', 'arris', 'motorola']
         if any(v in vendor_lower for v in router_vendors):
-            # eero mesh routers
-            if 'eero' in vendor_lower:
-                return "router"
-            # If has web port, likely router
+            return "router"
+        
+        # Network devices that might be routers
+        network_vendors = ['asus', 'tp-link', 'dlink', 'd-link', 'huawei', 'zyxel']
+        if any(v in vendor_lower for v in network_vendors):
             if ports & {80, 443, 8080, 8443}:
                 return "router"
             return "network_device"
