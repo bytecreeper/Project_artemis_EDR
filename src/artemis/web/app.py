@@ -1460,6 +1460,272 @@ async def get_all_edr_alerts(limit: int = 50):
     }
 
 
+# --- Risk Score & Security Posture ---
+
+_risk_scorer = None
+_response_engine = None
+_timeline_engine = None
+
+
+def get_risk_scorer():
+    """Get or create risk scorer instance."""
+    global _risk_scorer
+    if _risk_scorer is None:
+        from artemis.edr import RiskScorer
+        _risk_scorer = RiskScorer()
+    return _risk_scorer
+
+
+def get_response_engine():
+    """Get or create response engine instance."""
+    global _response_engine
+    if _response_engine is None:
+        from artemis.edr import ResponseEngine
+        _response_engine = ResponseEngine()
+    return _response_engine
+
+
+def get_timeline_engine():
+    """Get or create timeline engine instance."""
+    global _timeline_engine
+    if _timeline_engine is None:
+        from artemis.edr import TimelineEngine
+        _timeline_engine = TimelineEngine()
+    return _timeline_engine
+
+
+@app.get("/api/edr/posture")
+async def get_security_posture():
+    """Get current security posture and risk score."""
+    scorer = get_risk_scorer()
+    sysmon = get_sysmon_parser()
+    process_mon = get_process_monitor()
+    ti = get_threat_intel()
+    
+    # Gather data
+    alerts = sysmon.get_recent_alerts(limit=100) + process_mon.get_recent_alerts(limit=100)
+    
+    # Get devices from monitor if available
+    try:
+        monitor = get_monitor()
+        devices = monitor.devices if hasattr(monitor, 'devices') else []
+    except:
+        devices = []
+    
+    edr_status = {
+        "sysmon": sysmon.get_stats(),
+        "process_monitor": process_mon.get_stats(),
+        "threat_intel": ti.get_stats(),
+    }
+    
+    posture = scorer.calculate_posture(
+        alerts=alerts,
+        devices=devices,
+        edr_status=edr_status,
+    )
+    
+    return posture.to_dict()
+
+
+@app.get("/api/edr/posture/history")
+async def get_posture_history(hours: int = 24):
+    """Get risk score history."""
+    scorer = get_risk_scorer()
+    return {
+        "history": scorer.get_history(hours=hours),
+    }
+
+
+@app.get("/api/edr/mitre")
+async def get_mitre_coverage():
+    """Get MITRE ATT&CK coverage from detected techniques."""
+    sysmon = get_sysmon_parser()
+    process_mon = get_process_monitor()
+    
+    # Collect all techniques from alerts
+    techniques = set()
+    for alert in sysmon.get_recent_alerts(limit=500):
+        techniques.update(alert.get("mitre_techniques", []))
+    for alert in process_mon.get_recent_alerts(limit=500):
+        techniques.update(alert.get("mitre_techniques", []))
+    
+    from artemis.edr import get_mitre_coverage as calc_mitre, MITRE_TACTICS, MITRE_TECHNIQUES
+    coverage = calc_mitre(list(techniques))
+    
+    return {
+        "coverage": coverage,
+        "all_tactics": [
+            {"id": k, **v} for k, v in MITRE_TACTICS.items()
+        ],
+        "total_techniques": len(MITRE_TECHNIQUES),
+    }
+
+
+# --- Response Actions ---
+
+class KillProcessRequest(BaseModel):
+    """Request to kill a process."""
+    pid: int
+    force: bool = False
+
+
+@app.post("/api/edr/response/kill")
+async def kill_process_action(req: KillProcessRequest):
+    """Kill a process by PID."""
+    engine = get_response_engine()
+    result = engine.kill_process(req.pid, triggered_by="api", force=req.force)
+    return result.to_dict()
+
+
+class QuarantineRequest(BaseModel):
+    """Request to quarantine a file."""
+    path: str
+    delete_original: bool = True
+
+
+@app.post("/api/edr/response/quarantine")
+async def quarantine_file_action(req: QuarantineRequest):
+    """Quarantine a file."""
+    engine = get_response_engine()
+    result = engine.quarantine_file(req.path, triggered_by="api", delete_original=req.delete_original)
+    return result.to_dict()
+
+
+class BlockIpRequest(BaseModel):
+    """Request to block an IP."""
+    ip: str
+    direction: str = "both"
+
+
+@app.post("/api/edr/response/block-ip")
+async def block_ip_action(req: BlockIpRequest):
+    """Block an IP address in the firewall."""
+    engine = get_response_engine()
+    result = engine.block_ip(req.ip, triggered_by="api", direction=req.direction)
+    return result.to_dict()
+
+
+@app.post("/api/edr/response/unblock-ip")
+async def unblock_ip_action(ip: str):
+    """Remove IP block from firewall."""
+    engine = get_response_engine()
+    result = engine.unblock_ip(ip, triggered_by="api")
+    return result.to_dict()
+
+
+@app.get("/api/edr/response/blocked-ips")
+async def get_blocked_ips():
+    """Get list of blocked IPs."""
+    engine = get_response_engine()
+    return {"ips": engine.get_blocked_ips()}
+
+
+@app.get("/api/edr/response/quarantine")
+async def get_quarantined_files():
+    """Get list of quarantined files."""
+    engine = get_response_engine()
+    return {"files": engine.get_quarantined_files()}
+
+
+@app.post("/api/edr/response/quarantine/{name}/restore")
+async def restore_quarantined_file(name: str):
+    """Restore a quarantined file."""
+    engine = get_response_engine()
+    result = engine.restore_quarantined_file(name)
+    return result.to_dict()
+
+
+class ForensicsRequest(BaseModel):
+    """Request for forensic collection."""
+    target: str = "system"
+
+
+@app.post("/api/edr/response/forensics")
+async def collect_forensics_action(req: ForensicsRequest):
+    """Collect forensic data."""
+    engine = get_response_engine()
+    result = engine.collect_forensics(req.target, triggered_by="api")
+    return result.to_dict()
+
+
+@app.get("/api/edr/response/history")
+async def get_response_history(limit: int = 100):
+    """Get response action history."""
+    engine = get_response_engine()
+    return {"actions": engine.get_action_history(limit=limit)}
+
+
+# --- Timeline & Hunting ---
+
+@app.get("/api/edr/timeline")
+async def get_timeline(
+    minutes: int = 60,
+    event_types: Optional[str] = None,
+    severity: Optional[str] = None,
+    subject: Optional[str] = None,
+    limit: int = 100,
+):
+    """Get event timeline."""
+    from datetime import datetime, timedelta
+    
+    timeline = get_timeline_engine()
+    
+    start_time = datetime.now() - timedelta(minutes=minutes)
+    types_list = event_types.split(",") if event_types else None
+    
+    events = timeline.get_timeline(
+        start_time=start_time,
+        event_types=types_list,
+        severity=severity,
+        subject=subject,
+        limit=limit,
+    )
+    
+    return {
+        "events": events,
+        "total": len(events),
+    }
+
+
+@app.get("/api/edr/timeline/stats")
+async def get_timeline_stats(hours: int = 24):
+    """Get timeline statistics."""
+    timeline = get_timeline_engine()
+    return timeline.get_statistics(hours=hours)
+
+
+@app.get("/api/edr/process-tree")
+async def get_process_tree(
+    pid: Optional[int] = None,
+    minutes: int = 60,
+):
+    """Get process tree visualization."""
+    timeline = get_timeline_engine()
+    roots = timeline.build_process_tree(root_pid=pid, time_window_minutes=minutes)
+    return {
+        "trees": [r.to_dict() for r in roots],
+        "total_roots": len(roots),
+    }
+
+
+class HuntQuery(BaseModel):
+    """Threat hunting query."""
+    query: str
+    limit: int = 100
+
+
+@app.post("/api/edr/hunt")
+async def threat_hunt(req: HuntQuery):
+    """Execute a threat hunting query."""
+    timeline = get_timeline_engine()
+    results = timeline.hunt(req.query, limit=req.limit)
+    return {
+        "query": req.query,
+        "results": results,
+        "total": len(results),
+    }
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8000):
     """Run the web server."""
     import uvicorn
