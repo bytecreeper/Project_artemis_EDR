@@ -1,5 +1,21 @@
 # 🛡️ Project Artemis
 
+> **Hello everyone, Welcome to Project Artemis.**
+>
+> This initiative was developed with significant AI assistance and remains very much a work in progress. With your collaboration and expertise, the goal is to build a practical, AI-centric EDR and cybersecurity solution designed specifically for small businesses, nonprofits, and organizations operating with limited budgets.
+>
+> Project Artemis is **not intended to replace a qualified cybersecurity team** or a comprehensive security program. Instead, it is designed to serve as an accessible, supportive layer of protection, providing meaningful visibility, quality logging, and actionable information that can assist cybersecurity professionals when deeper analysis or intervention is required. Rather than relying on end users to describe what they believe they saw, Artemis aims to capture and present clear, structured data.
+>
+> The long-term vision is to create a secure, locally running tool that performs foundational cybersecurity functions, offers basic remediation capabilities, and strengthens defensive posture in a responsible and controlled manner. This solution is meant for those who often go underserved—small charities, resource-constrained organizations, and even home users who need practical protection without enterprise-level budgets.
+>
+> Our priorities are **simplicity, reliability, and safety**. The platform should be intuitive enough for non-technical users while still generating valuable technical insight. It should empower users to improve their security posture without overwhelming them or requiring significant financial investment in audits and remediation they may not fully understand.
+>
+> Thank you for being part of this effort. I look forward to collaborating with you to build something meaningful, responsible, and impactful.
+>
+> *— Jake*
+
+---
+
 **AI-Powered Security Operations Platform**
 
 A comprehensive cybersecurity toolkit combining detection engineering, endpoint detection & response (EDR), network monitoring, and AI-assisted threat analysis. Built for security professionals who want enterprise-grade capabilities without the enterprise price tag.
