@@ -356,9 +356,12 @@ Provide your security assessment."""
         )
         
     except Exception as e:
+        import traceback
+        error_msg = str(e) if str(e) else f"{type(e).__name__}: {repr(e)}"
+        logger.error(f"AI analysis error: {error_msg}\n{traceback.format_exc()}")
         return AIAnalysisResponse(
             success=False,
-            error=str(e),
+            error=error_msg or "Unknown error - check server logs",
         )
 
 

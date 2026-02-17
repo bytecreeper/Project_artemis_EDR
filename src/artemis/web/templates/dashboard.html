@@ -57,7 +57,7 @@
         }
 
         .sidebar-header {
-            padding: 0.75rem;
+            padding: 0.25rem;
             border-bottom: 1px solid var(--border);
             background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 60%, transparent 100%);
         }
@@ -66,11 +66,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 0;
         }
 
         .logo-img {
-            width: 170px;
-            height: 170px;
+            width: calc(100% - 0.5rem);
+            height: auto;
             object-fit: contain;
             filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 60px rgba(245, 158, 11, 0.25));
         }
@@ -2011,48 +2012,101 @@
             
             if (state.devices.length === 0) {
                 ctx.fillStyle = '#666';
-                ctx.font = '14px Inter';
+                ctx.font = '12px Inter';
                 ctx.textAlign = 'center';
-                ctx.fillText('Scanning for devices...', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('Scanning...', canvas.width / 2, canvas.height / 2);
                 return;
             }
             
-            // Draw devices
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+            // Group devices by type
+            const router = state.devices.find(d => d.type === 'router') || state.devices[0];
+            const groups = {
+                desktop: state.devices.filter(d => d.type === 'desktop' || d.type === 'server'),
+                mobile: state.devices.filter(d => d.type === 'mobile' || d.type === 'apple_device' || d.type === 'google_device'),
+                iot: state.devices.filter(d => ['smart_speaker', 'smart_tv', 'iot', 'smart_home'].includes(d.type)),
+                other: state.devices.filter(d => !['router', 'desktop', 'server', 'mobile', 'apple_device', 'google_device', 'smart_speaker', 'smart_tv', 'iot', 'smart_home'].includes(d.type))
+            };
             
-            // Draw router at center
-            ctx.fillStyle = '#f59e0b';
+            const colors = {
+                router: '#f59e0b',
+                desktop: '#3b82f6',
+                mobile: '#ec4899',
+                iot: '#22c55e',
+                other: '#6b7280'
+            };
+            
+            const icons = { router: '📡', desktop: '🖥️', mobile: '📱', iot: '💡', other: '❓' };
+            
+            const padding = 15;
+            const w = canvas.width - padding * 2;
+            const h = canvas.height - padding * 2;
+            
+            // Router at top center
+            const routerX = canvas.width / 2;
+            const routerY = padding + 20;
+            
+            // Draw router
+            ctx.fillStyle = colors.router;
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+            ctx.arc(routerX, routerY, 10, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = '9px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.fillText(router?.ip?.split('.').pop() || 'GW', routerX, routerY + 18);
             
-            // Draw devices around
-            state.devices.forEach((device, i) => {
-                const angle = (i / state.devices.length) * Math.PI * 2 - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
+            // Calculate device positions in rows by group
+            let yOffset = routerY + 40;
+            const rowHeight = 45;
+            const nodeRadius = 6;
+            
+            Object.entries(groups).forEach(([groupName, devices]) => {
+                if (devices.length === 0) return;
                 
-                // Line to center
-                ctx.strokeStyle = '#1a1a1a';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
+                const color = colors[groupName];
+                const spacing = Math.min(50, (w - 40) / Math.max(devices.length, 1));
+                const startX = (canvas.width - (devices.length - 1) * spacing) / 2;
                 
-                // Device node
-                ctx.fillStyle = '#3b82f6';
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
-                ctx.fill();
+                devices.forEach((device, i) => {
+                    const x = startX + i * spacing;
+                    const y = yOffset;
+                    
+                    // Connection line to router
+                    ctx.strokeStyle = '#222';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(routerX, routerY + 10);
+                    ctx.lineTo(x, y - nodeRadius);
+                    ctx.stroke();
+                    
+                    // Device node
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // IP label
+                    ctx.fillStyle = '#888';
+                    ctx.font = '8px JetBrains Mono';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(device.ip.split('.').pop(), x, y + 14);
+                });
                 
-                // Label
-                ctx.fillStyle = '#a0a0a0';
-                ctx.font = '11px JetBrains Mono';
-                ctx.textAlign = 'center';
-                ctx.fillText(device.ip.split('.').pop(), x, y + 22);
+                yOffset += rowHeight;
+            });
+            
+            // Legend
+            ctx.font = '8px Inter';
+            ctx.textAlign = 'left';
+            let legendX = 8;
+            const legendY = canvas.height - 8;
+            Object.entries(colors).forEach(([name, color]) => {
+                if (name === 'router') return;
+                ctx.fillStyle = color;
+                ctx.fillRect(legendX, legendY - 6, 8, 8);
+                ctx.fillStyle = '#666';
+                ctx.fillText(name, legendX + 11, legendY);
+                legendX += ctx.measureText(name).width + 20;
             });
         }
 
