@@ -13,6 +13,8 @@ logger = logging.getLogger("artemis.llm")
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
     
+    model: str = "unknown"
+    
     @abstractmethod
     async def generate(
         self,
@@ -36,6 +38,10 @@ class LLMProvider(ABC):
             The generated text
         """
         pass
+    
+    def get_model_name(self) -> str:
+        """Get the model name being used."""
+        return getattr(self, 'model', 'unknown')
 
 
 class AnthropicProvider(LLMProvider):
