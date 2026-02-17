@@ -909,16 +909,16 @@
 
                             <div class="card" style="max-height: 200px;">
                                 <div class="card-header">
-                                    <span>🤖 AI Analysis</span>
+                                    <span>AI Analysis</span>
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <button class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="runManualAIAnalysis()">Analyze Now</button>
+                                        <button class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="runManualAIAnalysis()">Analyze</button>
                                         <span class="live-badge"><span class="live-dot"></span></span>
                                     </div>
                                 </div>
                                 <div class="card-body" id="aiList" style="overflow-y: auto;">
                                     <div class="empty-state">
-                                        <div class="empty-icon">🤖</div>
-                                        <div>Click "Analyze Now" or wait for auto-analysis</div>
+                                        <div class="empty-icon">[AI]</div>
+                                        <div>Click "Analyze" for AI security assessment</div>
                                     </div>
                                 </div>
                             </div>
@@ -1465,46 +1465,19 @@
             if (data.analyses !== undefined) document.getElementById('statAnalyses').textContent = data.analyses;
         }
 
-        // Device type icons
-        const deviceIcons = {
-            'router': '📡',
-            'desktop': '🖥️',
-            'server': '🖥️',
-            'mobile': '📱',
-            'phone': '📱',
-            'tablet': '📱',
-            'smart_tv': '📺',
-            'streaming_device': '📺',
-            'smart_speaker': '🔊',
-            'gaming_console': '🎮',
-            'printer': '🖨️',
-            'camera': '📷',
-            'iot_device': '💡',
-            'apple_device': '🍎',
-            'google_device': '🔵',
-            'amazon_device': '📦',
-            'network_device': '🔌',
-            'unknown': '❓'
-        };
-        
-        function getDeviceIcon(type) {
-            return deviceIcons[type] || deviceIcons['unknown'];
-        }
-        
         function updateDevicesList() {
             const container = document.getElementById('devicesList');
             const countBadge = document.getElementById('deviceCountBadge');
             countBadge.textContent = state.devices.length;
             
             if (state.devices.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div>Scanning network...</div></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">[...]</div><div>Scanning network...</div></div>';
                 return;
             }
             
             container.innerHTML = state.devices.map(device => `
                 <div class="device-item" onclick="selectDevice('${device.ip}')">
                     <div class="device-header">
-                        <span class="device-icon">${getDeviceIcon(device.type)}</span>
                         <span class="device-name">${device.hostname || device.ip}</span>
                         <span class="device-type-badge ${device.type || ''}">${device.type || 'unknown'}</span>
                     </div>
@@ -2239,7 +2212,7 @@
             const analysisHtml = `
                 <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid ${riskColor};">
                     <div class="ai-header" style="display: flex; justify-content: space-between;">
-                        <span>🤖 AI Security Analysis</span>
+                        <span>Security Analysis</span>
                         <span style="color: ${riskColor}; font-weight: bold;">Risk: ${data.risk_level}/10</span>
                     </div>
                     <div class="ai-response" style="white-space: pre-wrap; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
@@ -2287,7 +2260,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                 
                 const html = `
                     <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--warning);">
-                        <div class="ai-header">⚠️ Suspicious Connection</div>
+                        <div class="ai-header">Suspicious Connection</div>
                         <div class="ai-response" style="font-size: 0.8rem;">
                             Found ${suspiciousConns.length} connection(s) to unusual ports.
                             <br>Processes: ${suspiciousConns.map(c => c.process || 'unknown').join(', ')}
@@ -2302,7 +2275,7 @@ ${escapeHtml(data.analysis || 'No analysis available')}
         // Manual AI analysis button
         async function runManualAIAnalysis() {
             const aiList = document.getElementById('aiList');
-            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">🤖 Analyzing with DeepSeek...</div>';
+            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">Analyzing...</div>';
             
             try {
                 const resp = await fetch('/api/ai/analyze', {
@@ -2323,13 +2296,13 @@ ${escapeHtml(data.analysis || 'No analysis available')}
                     addAIAnalysis(data);
                 } else {
                     aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--danger);">
-                        <div class="ai-header">❌ Analysis Failed</div>
+                        <div class="ai-header">Analysis Failed</div>
                         <div class="ai-response">${escapeHtml(data.error || 'Unknown error')}</div>
                     </div>`;
                 }
             } catch (e) {
                 aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem;">
-                    <div class="ai-header">❌ Error</div>
+                    <div class="ai-header">Error</div>
                     <div class="ai-response">${escapeHtml(e.message)}</div>
                 </div>`;
             }
