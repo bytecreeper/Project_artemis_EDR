@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARTEMIS // Terminal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0a;
+            --bg2: #111;
+            --bg3: #1a1a1a;
+            --border: #222;
+            --text: #00ff00;
+            --text2: #00cc00;
+            --dim: #006600;
+            --accent: #ff8c00;
+            --critical: #ff0000;
+            --high: #ff6600;
+            --medium: #ffcc00;
+            --low: #00ccff;
+            --info: #00ff00;
+        }
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            line-height: 1.4;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        /* Layout */
+        .container { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+        .header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--accent);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { color: var(--accent); font-weight: bold; font-size: 14px; letter-spacing: 2px; }
+        .status { display: flex; gap: 20px; font-size: 11px; }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
+        .status-dot.online { background: var(--info); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .main { display: grid; grid-template-columns: 280px 1fr 350px; overflow: hidden; }
+        
+        .footer {
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            padding: 4px 16px;
+            font-size: 10px;
+            color: var(--dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Panels */
+        .panel {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel:last-child { border-right: none; }
+        .panel-header {
+            background: var(--bg2);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .panel-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--bg);
+            padding: 4px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .tab {
+            padding: 4px 12px;
+            background: transparent;
+            border: none;
+            color: var(--dim);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        .tab:hover { color: var(--text2); }
+        .tab.active { background: var(--bg3); color: var(--accent); }
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+        
+        /* Device List */
+        .device-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .device-item:hover { background: var(--bg2); }
+        .device-item.active { background: var(--bg3); border-left: 2px solid var(--accent); }
+        .device-icon { color: var(--dim); font-size: 14px; }
+        .device-info { flex: 1; min-width: 0; }
+        .device-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .device-ip { color: var(--dim); font-size: 10px; }
+        .device-status { width: 6px; height: 6px; border-radius: 50%; background: var(--info); }
+        .device-status.alert { background: var(--critical); }
+        
+        /* Process List */
+        .process-item {
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .process-item:hover { background: var(--bg2); }
+        .process-item.active { background: var(--bg3); }
+        .process-header { display: flex; justify-content: space-between; }
+        .process-name { color: var(--text); }
+        .process-pid { color: var(--dim); }
+        .process-cmd { color: var(--dim); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .process-stats { color: var(--dim); font-size: 10px; margin-top: 2px; }
+        
+        /* Event Stream */
+        .event-stream { font-size: 11px; }
+        .event-item {
+            padding: 4px 12px;
+            border-bottom: 1px solid #0f0f0f;
+            display: grid;
+            grid-template-columns: 70px 90px 1fr;
+            gap: 8px;
+        }
+        .event-item:hover { background: var(--bg2); }
+        .event-time { color: var(--dim); }
+        .event-type { font-weight: bold; }
+        .event-type.process_start { color: var(--info); }
+        .event-type.process_end { color: var(--dim); }
+        .event-type.network_connect { color: var(--low); }
+        .event-type.dns_query { color: var(--medium); }
+        .event-type.powershell { color: var(--accent); }
+        .event-type.security_alert { color: var(--critical); }
+        .event-type.window_focus { color: var(--dim); }
+        .event-type.file_create, .event-type.file_modify { color: #9b59b6; }
+        .event-detail { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Severity badges */
+        .sev { padding: 1px 4px; border-radius: 2px; font-size: 9px; font-weight: bold; }
+        .sev-critical { background: var(--critical); color: #000; }
+        .sev-high { background: var(--high); color: #000; }
+        .sev-medium { background: var(--medium); color: #000; }
+        .sev-low { background: var(--low); color: #000; }
+        .sev-info { background: transparent; color: var(--dim); }
+        
+        /* Details Panel */
+        .detail-section {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-title {
+            color: var(--accent);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 11px;
+        }
+        .detail-label { color: var(--dim); }
+        .detail-value { color: var(--text); text-align: right; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+        .detail-value.mono { font-family: monospace; }
+        
+        /* Connection visualization */
+        .conn-item {
+            padding: 4px 12px;
+            font-size: 10px;
+            border-bottom: 1px solid #0f0f0f;
+        }
+        .conn-arrow { color: var(--accent); margin: 0 4px; }
+        .conn-local { color: var(--info); }
+        .conn-remote { color: var(--low); }
+        .conn-process { color: var(--dim); margin-left: 8px; }
+        
+        /* Filters */
+        .filters {
+            padding: 8px 12px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 2px 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 10px;
+        }
+        .filter-btn:hover { border-color: var(--text2); color: var(--text2); }
+        .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+        
+        /* Empty state */
+        .empty { padding: 20px; text-align: center; color: var(--dim); }
+        
+        /* Live indicator */
+        .live { display: flex; align-items: center; gap: 6px; }
+        .live-dot { width: 8px; height: 8px; background: var(--critical); border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
+        /* Buttons */
+        .btn {
+            padding: 4px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+        }
+        .btn:hover { border-color: var(--accent); }
+        .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); }
+        
+        /* Command input */
+        .cmd-input {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+        }
+        .cmd-prompt { color: var(--accent); margin-right: 8px; }
+        .cmd-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 12px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">◈ ARTEMIS // TERMINAL</div>
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-dot" id="wsStatus"></div>
+                    <span id="wsStatusText">CONNECTING</span>
+                </div>
+                <div class="status-item">
+                    <span>EVENTS:</span>
+                    <span id="eventCount">0</span>
+                </div>
+                <div class="status-item">
+                    <span>PROCESSES:</span>
+                    <span id="processCount">0</span>
+                </div>
+                <div class="status-item live">
+                    <div class="live-dot"></div>
+                    <span>LIVE</span>
+                </div>
+            </div>
+        </header>
+        
+        <main class="main">
+            <!-- Left: Devices/Processes -->
+            <div class="panel">
+                <div class="panel-tabs">
+                    <button class="tab active" data-tab="devices">DEVICES</button>
+                    <button class="tab" data-tab="processes">PROCESSES</button>
+                </div>
+                <div class="panel-content" id="leftPanel">
+                    <div id="deviceList"></div>
+                    <div id="processList" style="display:none;"></div>
+                </div>
+            </div>
+            
+            <!-- Center: Event Stream -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>EVENT STREAM</span>
+                    <div>
+                        <button class="btn" id="pauseBtn">PAUSE</button>
+                        <button class="btn" id="clearBtn">CLEAR</button>
+                    </div>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">ALL</button>
+                    <button class="filter-btn" data-filter="process">PROC</button>
+                    <button class="filter-btn" data-filter="network">NET</button>
+                    <button class="filter-btn" data-filter="dns">DNS</button>
+                    <button class="filter-btn" data-filter="powershell">PS</button>
+                    <button class="filter-btn" data-filter="security">SEC</button>
+                    <button class="filter-btn" data-filter="file">FILE</button>
+                    <button class="filter-btn" data-filter="window">WIN</button>
+                </div>
+                <div class="panel-content event-stream" id="eventStream"></div>
+            </div>
+            
+            <!-- Right: Details -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>DETAILS</span>
+                </div>
+                <div class="panel-content" id="detailPanel">
+                    <div class="empty">Select an event or process</div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <div>ARTEMIS v0.7.0 // ENDPOINT MONITOR</div>
+            <div id="systemInfo">Loading...</div>
+        </footer>
+    </div>
+    
+    <script>
+        let ws = null;
+        let paused = false;
+        let events = [];
+        let processes = {};
+        let devices = [];
+        let activeFilter = 'all';
+        let selectedEvent = null;
+        let selectedProcess = null;
+        const MAX_EVENTS = 2000;
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const target = tab.dataset.tab;
+                document.getElementById('deviceList').style.display = target === 'devices' ? 'block' : 'none';
+                document.getElementById('processList').style.display = target === 'processes' ? 'block' : 'none';
+            });
+        });
+        
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = btn.dataset.filter;
+                renderEvents();
+            });
+        });
+        
+        // Pause/Clear
+        document.getElementById('pauseBtn').addEventListener('click', function() {
+            paused = !paused;
+            this.textContent = paused ? 'RESUME' : 'PAUSE';
+            this.style.color = paused ? 'var(--critical)' : '';
+        });
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            events = [];
+            renderEvents();
+        });
+        
+        // WebSocket
+        function connect() {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${location.host}/ws/terminal`);
+            
+            ws.onopen = () => {
+                document.getElementById('wsStatus').classList.add('online');
+                document.getElementById('wsStatusText').textContent = 'CONNECTED';
+            };
+            
+            ws.onclose = () => {
+                document.getElementById('wsStatus').classList.remove('online');
+                document.getElementById('wsStatusText').textContent = 'DISCONNECTED';
+                setTimeout(connect, 2000);
+            };
+            
+            ws.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                handleMessage(msg);
+            };
+        }
+        
+        function handleMessage(msg) {
+            if (msg.type === 'init') {
+                processes = msg.data.processes || {};
+                devices = msg.data.devices || [];
+                events = msg.data.events || [];
+                renderDevices();
+                renderProcesses();
+                renderEvents();
+                updateCounts();
+            }
+            else if (msg.type === 'event' && !paused) {
+                events.unshift(msg.data);
+                if (events.length > MAX_EVENTS) events.pop();
+                renderEventItem(msg.data, true);
+                updateCounts();
+                
+                // Auto-scroll if at top
+                const stream = document.getElementById('eventStream');
+                if (stream.scrollTop < 50) {
+                    stream.scrollTop = 0;
+                }
+            }
+            else if (msg.type === 'process_update') {
+                processes = msg.data.processes || processes;
+                renderProcesses();
+                updateCounts();
+            }
+            else if (msg.type === 'device_update') {
+                devices = msg.data.devices || devices;
+                renderDevices();
+            }
+        }
+        
+        function renderDevices() {
+            const container = document.getElementById('deviceList');
+            if (!devices.length) {
+                container.innerHTML = '<div class="empty">Scanning network...</div>';
+                return;
+            }
+            
+            container.innerHTML = devices.map(d => {
+                const name = d.hostname || d.ip_address;
+                const type = d.device_type || 'unknown';
+                const hasAlert = d.alerts && d.alerts.length > 0;
+                return `
+                    <div class="device-item" data-ip="${d.ip_address}">
+                        <div class="device-icon">${getDeviceIcon(type)}</div>
+                        <div class="device-info">
+                            <div class="device-name">${esc(name)}</div>
+                            <div class="device-ip">${d.ip_address} • ${type}</div>
+                        </div>
+                        <div class="device-status ${hasAlert ? 'alert' : ''}"></div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Click handlers
+            container.querySelectorAll('.device-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.device-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const ip = item.dataset.ip;
+                    const device = devices.find(d => d.ip_address === ip);
+                    showDeviceDetails(device);
+                });
+            });
+        }
+        
+        function renderProcesses() {
+            const container = document.getElementById('processList');
+            const procs = Object.values(processes);
+            
+            if (!procs.length) {
+                container.innerHTML = '<div class="empty">Loading processes...</div>';
+                return;
+            }
+            
+            // Sort by memory
+            procs.sort((a, b) => (b.memory_mb || 0) - (a.memory_mb || 0));
+            
+            container.innerHTML = procs.slice(0, 100).map(p => `
+                <div class="process-item" data-pid="${p.pid}">
+                    <div class="process-header">
+                        <span class="process-name">${esc(p.name)}</span>
+                        <span class="process-pid">PID ${p.pid}</span>
+                    </div>
+                    <div class="process-cmd">${esc(p.command_line || p.path || '')}</div>
+                    <div class="process-stats">MEM: ${(p.memory_mb || 0).toFixed(1)}MB • THR: ${p.threads || 0}</div>
+                </div>
+            `).join('');
+            
+            // Click handlers
+            container.querySelectorAll('.process-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.process-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const pid = parseInt(item.dataset.pid);
+                    const proc = processes[pid];
+                    showProcessDetails(proc);
+                });
+            });
+        }
+        
+        function renderEvents() {
+            const container = document.getElementById('eventStream');
+            const filtered = filterEvents(events);
+            
+            if (!filtered.length) {
+                container.innerHTML = '<div class="empty">No events</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.slice(0, 500).map(e => renderEventHTML(e)).join('');
+            
+            // Click handlers
+            container.querySelectorAll('.event-item').forEach((item, idx) => {
+                item.addEventListener('click', () => {
+                    showEventDetails(filtered[idx]);
+                });
+            });
+        }
+        
+        function renderEventItem(event, prepend = false) {
+            if (activeFilter !== 'all' && !matchesFilter(event, activeFilter)) return;
+            
+            const container = document.getElementById('eventStream');
+            const html = renderEventHTML(event);
+            
+            if (prepend) {
+                const empty = container.querySelector('.empty');
+                if (empty) empty.remove();
+                container.insertAdjacentHTML('afterbegin', html);
+                
+                // Limit DOM nodes
+                while (container.children.length > 500) {
+                    container.lastChild.remove();
+                }
+            }
+        }
+        
+        function renderEventHTML(e) {
+            const time = new Date(e.timestamp).toLocaleTimeString('en-US', { hour12: false });
+            const type = e.event_type.replace('_', ' ').toUpperCase();
+            const typeClass = e.event_type;
+            
+            let detail = '';
+            if (e.process_name) detail += e.process_name;
+            if (e.command_line) detail += ' ' + e.command_line.substring(0, 80);
+            if (e.dns_query) detail = e.dns_query;
+            if (e.remote_ip) detail = `${e.remote_ip}:${e.remote_port}`;
+            if (e.window_title) detail = e.window_title;
+            if (e.file_path) detail = e.file_path;
+            
+            const sevClass = e.severity ? `sev-${e.severity}` : 'sev-info';
+            
+            return `
+                <div class="event-item">
+                    <span class="event-time">${time}</span>
+                    <span class="event-type ${typeClass}">${type}</span>
+                    <span class="event-detail">${esc(detail)}</span>
+                </div>
+            `;
+        }
+        
+        function filterEvents(events) {
+            if (activeFilter === 'all') return events;
+            return events.filter(e => matchesFilter(e, activeFilter));
+        }
+        
+        function matchesFilter(e, filter) {
+            const type = e.event_type;
+            switch (filter) {
+                case 'process': return type.includes('process');
+                case 'network': return type.includes('network') || type === 'dns_query';
+                case 'dns': return type === 'dns_query';
+                case 'powershell': return type === 'powershell' || type === 'cmd';
+                case 'security': return type === 'security_alert' || type === 'login' || type === 'logout';
+                case 'file': return type.includes('file');
+                case 'window': return type === 'window_focus';
+                default: return true;
+            }
+        }
+        
+        function showEventDetails(event) {
+            selectedEvent = event;
+            const panel = document.getElementById('detailPanel');
+            
+            panel.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-title">Event Info</div>
+                    <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">${event.event_type}</span></div>
+                    <div class="detail-row"><span class="detail-label">Time</span><span class="detail-value">${new Date(event.timestamp).toLocaleString()}</span></div>
+                    <div class="detail-row"><span class="detail-label">Severity</span><span class="detail-value"><span class="sev sev-${event.severity}">${event.severity.toUpperCase()}</span></span></div>
+                </div>
+                ${event.process_name ? `
+                <div class="detail-section">
+                    <div class="detail-title">Process</div>
+                    <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(event.process_name)}</span></div>
+                    <div class="detail-row"><span class="detail-label">PID</span><span class="detail-value">${event.process_id || '-'}</span></div>
+                    <div class="detail-row"><span class="detail-label">Path</span><span class="detail-value mono">${esc(event.process_path || '-')}</span></div>
+                    <div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${esc(event.username || '-')}</span></div>
+                </div>
+                ` : ''}
+                ${event.command_line ? `
+                <div class="detail-section">
+                    <div class="detail-title">Command Line</div>
+                    <div style="font-size:10px;color:var(--text);word-break:break-all;padding:8px;background:var(--bg);border-radius:4px;">${esc(event.command_line)}</div>
+                </div>
+                ` : ''}
+                ${event.remote_ip ? `
+                <div class="detail-section">
+                    <div class="detail-title">Network</div>
+                    <div class="detail-row"><span class="detail-label">Remote</span><span class="detail-value">${event.remote_ip}:${event.remote_port}</span></div>
+                    <div class="detail-row"><span class="detail-label">Local</span><span class="detail-value">${event.local_ip}:${event.local_port}</span></div>
+                    <div class="detail-row"><span class="detail-label">Protocol</span><span class="detail-value">${event.protocol || 'TCP'}</span></div>
+                </div>
+                ` : ''}
+                ${event.dns_query ? `
+                <div class="detail-section">
+                    <div class="detail-title">DNS Query</div>
+                    <div class="detail-row"><span class="detail-label">Domain</span><span class="detail-value mono">${esc(event.dns_query)}</span></div>
+                    <div class="detail-row"><span class="detail-label">Resolved</span><span class="detail-value">${event.remote_ip || '-'}</span></div>
+                </div>
+                ` : ''}
+                ${event.window_title ? `
+                <div class="detail-section">
+                    <div class="detail-title">Window</div>
+                    <div class="detail-row"><span class="detail-label">Title</span><span class="detail-value">${esc(event.window_title)}</span></div>
+                </div>
+                ` : ''}
+                ${event.details && Object.keys(event.details).length ? `
+                <div class="detail-section">
+                    <div class="detail-title">Additional Details</div>
+                    ${Object.entries(event.details).map(([k,v]) => `
+                        <div class="detail-row"><span class="detail-label">${k}</span><span class="detail-value">${esc(String(v).substring(0,100))}</span></div>
+                    `).join('')}
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        function showProcessDetails(proc) {
+            if (!proc) return;
+            selectedProcess = proc;
+            const panel = document.getElementById('detailPanel');
+            
+            panel.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-title">Process Info</div>
+                    <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(proc.name)}</span></div>
+                    <div class="detail-row"><span class="detail-label">PID</span><span class="detail-value">${proc.pid}</span></div>
+                    <div class="detail-row"><span class="detail-label">Path</span><span class="detail-value mono">${esc(proc.path || '-')}</span></div>
+                    <div class="detail-row"><span class="detail-label">User</span><span class="detail-value">${esc(proc.username || '-')}</span></div>
+                    <div class="detail-row"><span class="detail-label">Parent PID</span><span class="detail-value">${proc.parent_pid || '-'}</span></div>
+                </div>
+                <div class="detail-section">
+                    <div class="detail-title">Resources</div>
+                    <div class="detail-row"><span class="detail-label">Memory</span><span class="detail-value">${(proc.memory_mb || 0).toFixed(1)} MB</span></div>
+                    <div class="detail-row"><span class="detail-label">Threads</span><span class="detail-value">${proc.threads || 0}</span></div>
+                    <div class="detail-row"><span class="detail-label">Handles</span><span class="detail-value">${proc.handles || 0}</span></div>
+                </div>
+                ${proc.command_line ? `
+                <div class="detail-section">
+                    <div class="detail-title">Command Line</div>
+                    <div style="font-size:10px;color:var(--text);word-break:break-all;padding:8px;background:var(--bg);border-radius:4px;">${esc(proc.command_line)}</div>
+                </div>
+                ` : ''}
+                ${proc.window_title ? `
+                <div class="detail-section">
+                    <div class="detail-title">Window</div>
+                    <div class="detail-row"><span class="detail-label">Title</span><span class="detail-value">${esc(proc.window_title)}</span></div>
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        function showDeviceDetails(device) {
+            if (!device) return;
+            const panel = document.getElementById('detailPanel');
+            
+            panel.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-title">Device Info</div>
+                    <div class="detail-row"><span class="detail-label">IP</span><span class="detail-value">${device.ip_address}</span></div>
+                    <div class="detail-row"><span class="detail-label">Hostname</span><span class="detail-value">${esc(device.hostname || '-')}</span></div>
+                    <div class="detail-row"><span class="detail-label">MAC</span><span class="detail-value mono">${device.mac_address || '-'}</span></div>
+                    <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value">${device.device_type || 'unknown'}</span></div>
+                    <div class="detail-row"><span class="detail-label">Vendor</span><span class="detail-value">${esc(device.manufacturer || '-')}</span></div>
+                </div>
+                ${device.open_ports && device.open_ports.length ? `
+                <div class="detail-section">
+                    <div class="detail-title">Open Ports</div>
+                    <div style="font-size:11px;color:var(--text);">${device.open_ports.join(', ')}</div>
+                </div>
+                ` : ''}
+                <div class="detail-section">
+                    <div class="detail-title">Activity</div>
+                    <div class="empty">Select this device's events from stream</div>
+                </div>
+            `;
+        }
+        
+        function updateCounts() {
+            document.getElementById('eventCount').textContent = events.length;
+            document.getElementById('processCount').textContent = Object.keys(processes).length;
+        }
+        
+        function getDeviceIcon(type) {
+            const icons = {
+                router: '⬡',
+                access_point: '◎',
+                desktop: '▣',
+                laptop: '▢',
+                smartphone: '▫',
+                smart_tv: '▭',
+                streaming_device: '▷',
+                speaker: '♪',
+                nas: '▤',
+                server: '▥',
+                printer: '▦',
+                camera: '◉',
+                unknown: '◇',
+            };
+            return icons[type] || icons.unknown;
+        }
+        
+        function esc(s) {
+            if (!s) return '';
+            return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            connect();
+            document.getElementById('systemInfo').textContent = `${navigator.platform} // ${new Date().toLocaleDateString()}`;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemis SOC</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0d0d12;
+            --bg-card: #16161f;
+            --bg-hover: #1e1e2a;
+            --border: #252535;
+            --text: #e0e0e0;
+            --text-dim: #707080;
+            --accent: #ff8c00;
+            --critical: #ff4757;
+            --high: #ff8c00;
+            --medium: #ffc107;
+            --low: #17a2b8;
+            --success: #2ed573;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar { width: 220px; background: #0a0a0f; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; height: 100vh; }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--border); }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #cc7000); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .logo-text { font-size: 1.1rem; font-weight: 600; }
+        .logo-text span { color: var(--accent); }
+        
+        .nav { flex: 1; padding: 1rem 0.75rem; }
+        .nav-section { margin-bottom: 1.5rem; }
+        .nav-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0.75rem; margin-bottom: 0.5rem; }
+        .nav-btn { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.75rem; border: none; background: transparent; color: var(--text-dim); border-radius: 8px; cursor: pointer; font-size: 0.9rem; text-align: left; transition: all 0.15s; }
+        .nav-btn:hover { background: var(--bg-card); color: var(--text); }
+        .nav-btn.active { background: var(--accent); color: #000; }
+        .nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .nav-btn .badge { margin-left: auto; background: var(--critical); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 10px; }
+        .nav-btn.active .badge { background: rgba(0,0,0,0.3); }
+        
+        .sidebar-footer { padding: 1rem; border-top: 1px solid var(--border); }
+        .status-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-dim); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
+        .status-dot.online { background: var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Main */
+        .main { flex: 1; margin-left: 220px; }
+        
+        /* Views */
+        .view { display: none; padding: 1.5rem; min-height: 100vh; }
+        .view.active { display: block; }
+        
+        .view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .view-title { font-size: 1.5rem; font-weight: 600; }
+        .view-actions { display: flex; gap: 0.5rem; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.15s; }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: #000; }
+        .btn-primary:hover { background: #e67e00; }
+        
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; }
+        .stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 700; }
+        .stat-value.critical { color: var(--critical); }
+        .stat-value.warning { color: var(--high); }
+        .stat-value.success { color: var(--success); }
+        
+        /* Panels */
+        .panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .panel.full { grid-column: span 2; }
+        .panel-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .panel-title::before { content: ''; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .panel-content { padding: 0.5rem; max-height: 350px; overflow-y: auto; }
+        .panel-content.no-pad { padding: 0; }
+        
+        /* Threat Items */
+        .threat-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+        .threat-item:hover { background: var(--bg-hover); }
+        .threat-sev { width: 4px; height: 36px; border-radius: 2px; }
+        .threat-sev.critical { background: var(--critical); }
+        .threat-sev.high { background: var(--high); }
+        .threat-sev.medium { background: var(--medium); }
+        .threat-sev.low { background: var(--low); }
+        .threat-info { flex: 1; min-width: 0; }
+        .threat-title { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .threat-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem; }
+        .threat-badge { font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 3px; text-transform: uppercase; }
+        .threat-badge.critical { background: rgba(255,71,87,0.2); color: var(--critical); }
+        .threat-badge.high { background: rgba(255,140,0,0.2); color: var(--high); }
+        .threat-badge.medium { background: rgba(255,193,7,0.2); color: var(--medium); }
+        .threat-time { font-size: 0.8rem; color: var(--text-dim); }
+        
+        /* Event Log */
+        .event-log { font-family: 'Consolas', monospace; font-size: 0.8rem; }
+        .event-row { display: flex; gap: 1rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+        .event-row:hover { background: var(--bg-hover); }
+        .event-time { color: var(--text-dim); min-width: 70px; }
+        .event-source { color: var(--accent); min-width: 100px; }
+        .event-id { color: var(--medium); min-width: 60px; }
+        .event-msg { color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Chart */
+        .chart-box { padding: 1rem; height: 220px; }
+        
+        /* Empty */
+        .empty { text-align: center; padding: 3rem; color: var(--text-dim); }
+        
+        /* Settings */
+        .settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+        .settings-title { font-weight: 600; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-label { font-size: 0.9rem; }
+        .setting-desc { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.2rem; }
+        .toggle { width: 44px; height: 24px; background: var(--border); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; }
+        .toggle.on { background: var(--accent); }
+        .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+        .toggle.on::after { left: 23px; }
+        .input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.9rem; width: 200px; }
+        .input:focus { outline: none; border-color: var(--accent); }
+        select.input { cursor: pointer; }
+        
+        /* Network View */
+        .network-grid { display: grid; grid-template-columns: 280px 1fr; gap: 1rem; height: calc(100vh - 150px); }
+        .device-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .device-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg); border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+        .device-item:hover { background: var(--bg-hover); }
+        .device-item.critical { border-left: 3px solid var(--critical); }
+        .device-icon { width: 36px; height: 36px; background: var(--bg-card); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+        .device-info { flex: 1; }
+        .device-name { font-size: 0.9rem; }
+        .device-ip { font-size: 0.75rem; color: var(--text-dim); }
+        .device-status { width: 8px; height: 8px; border-radius: 50%; }
+        .device-status.online { background: var(--success); }
+        .device-status.offline { background: var(--text-dim); }
+        .device-status.alert { background: var(--critical); }
+        
+        .network-map { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; position: relative; overflow: hidden; }
+        #networkCanvas { width: 100%; height: 100%; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .panels-grid { grid-template-columns: 1fr; }
+            .panel.full { grid-column: span 1; }
+        }
+        
+        @media (max-width: 1100px) {
+            .network-grid { grid-template-columns: 1fr; height: auto; }
+            .network-map { min-height: 400px; }
+        }
+        
+        @media (max-width: 900px) {
+            .sidebar { 
+                width: 60px; 
+                overflow: hidden;
+            }
+            .sidebar:hover {
+                width: 220px;
+                position: fixed;
+                z-index: 100;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            }
+            .sidebar .logo-text,
+            .sidebar .nav-label,
+            .sidebar .nav-btn span:not(.badge),
+            .sidebar .status-badge span { 
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            .sidebar:hover .logo-text,
+            .sidebar:hover .nav-label,
+            .sidebar:hover .nav-btn span:not(.badge),
+            .sidebar:hover .status-badge span { 
+                opacity: 1;
+            }
+            .sidebar .nav-btn { justify-content: center; }
+            .sidebar:hover .nav-btn { justify-content: flex-start; }
+            .main { margin-left: 60px; }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+            .stat-card { padding: 0.75rem; }
+            .stat-value { font-size: 1.5rem; }
+            .view { padding: 1rem; }
+            .view-header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+            .view-title { font-size: 1.25rem; }
+            .event-row { flex-wrap: wrap; gap: 0.25rem; font-size: 0.7rem; }
+            .event-time { min-width: auto; }
+            .event-source { min-width: auto; }
+            .event-id { min-width: auto; }
+            .event-msg { flex-basis: 100%; }
+            .threat-item { flex-wrap: wrap; }
+            .threat-time { flex-basis: 100%; margin-top: 0.25rem; }
+            .settings-section { padding: 1rem; }
+            .setting-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .input { width: 100%; }
+        }
+        
+        @media (max-width: 500px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+            
+            /* Mobile nav */
+            .mobile-nav {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #0a0a0f;
+                border-top: 1px solid var(--border);
+                padding: 0.5rem;
+                justify-content: space-around;
+                z-index: 100;
+            }
+            .mobile-nav button {
+                flex: 1;
+                background: transparent;
+                border: none;
+                color: var(--text-dim);
+                padding: 0.5rem;
+                cursor: pointer;
+            }
+            .mobile-nav button.active { color: var(--accent); }
+            .mobile-nav svg { width: 24px; height: 24px; }
+            .view { padding-bottom: 70px; }
+        }
+        
+        .mobile-nav { display: none; }
+        
+        /* Prevent content squish */
+        .panel-content { min-height: 100px; }
+        .table-wrapper { overflow-x: auto; }
+        .threat-title, .event-msg { 
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">A</div>
+                <div class="logo-text">Artemis <span>SOC</span></div>
+            </div>
+        </div>
+        <div class="nav">
+            <div class="nav-section">
+                <div class="nav-label">Monitor</div>
+                <button class="nav-btn active" data-view="dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Dashboard
+                </button>
+                <button class="nav-btn" data-view="threats">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Threats
+                    <span class="badge" id="threatBadge">0</span>
+                </button>
+                <button class="nav-btn" data-view="events">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Event Log
+                </button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Network</div>
+                <button class="nav-btn" data-view="network">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="M6 7l4 4m4 0l4-4M6 17l4-4m4 0l4 4"/></svg>
+                    Network Map
+                </button>
+                <button class="nav-btn" data-view="assets">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                    Assets
+                </button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <button class="nav-btn" data-view="settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    Settings
+                </button>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="main">
+        <!-- DASHBOARD VIEW -->
+        <div class="view active" id="view-dashboard">
+            <div class="view-header">
+                <h1 class="view-title">Dashboard</h1>
+                <div class="view-actions">
+                    <button class="btn" id="refreshBtn">Refresh</button>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Threats Detected</div>
+                    <div class="stat-value critical" id="statThreats">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Events Processed</div>
+                    <div class="stat-value" id="statEvents">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Critical Alerts</div>
+                    <div class="stat-value warning" id="statCritical">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">AI Analyses</div>
+                    <div class="stat-value success" id="statAnalyses">0</div>
+                </div>
+            </div>
+            <div class="panels-grid">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Recent Threats</div></div>
+                    <div class="panel-content" id="dashThreatList"><div class="empty">No threats detected</div></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Activity</div></div>
+                    <div class="chart-box"><canvas id="activityChart"></canvas></div>
+                </div>
+                <div class="panel full">
+                    <div class="panel-header">
+                        <div class="panel-title">Live Events</div>
+                        <button class="btn" id="pauseBtn">Pause</button>
+                    </div>
+                    <div class="panel-content no-pad event-log" id="dashEventList" style="max-height: 250px;"><div class="empty">Waiting for events...</div></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- THREATS VIEW -->
+        <div class="view" id="view-threats">
+            <div class="view-header">
+                <h1 class="view-title">Threat Queue</h1>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">All Threats</div></div>
+                <div class="panel-content" id="threatList" style="max-height: calc(100vh - 200px);"><div class="empty">No threats detected</div></div>
+            </div>
+        </div>
+        
+        <!-- EVENTS VIEW -->
+        <div class="view" id="view-events">
+            <div class="view-header">
+                <h1 class="view-title">Event Log</h1>
+                <div class="view-actions">
+                    <button class="btn" id="clearEventsBtn">Clear</button>
+                    <button class="btn" id="exportEventsBtn">Export</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-content no-pad event-log" id="eventList" style="max-height: calc(100vh - 200px);"><div class="empty">Waiting for events...</div></div>
+            </div>
+        </div>
+        
+        <!-- NETWORK VIEW -->
+        <div class="view" id="view-network">
+            <div class="view-header">
+                <h1 class="view-title">Network Map</h1>
+                <div class="view-actions">
+                    <span id="scanStatus" style="color: var(--text-dim); margin-right: 1rem;"></span>
+                    <button class="btn btn-primary" id="scanNetworkBtn">Scan Network</button>
+                </div>
+            </div>
+            <div class="network-grid">
+                <div class="panel">
+                    <div class="panel-header"><div class="panel-title">Devices (<span id="deviceCount">0</span>)</div></div>
+                    <div class="panel-content device-list" id="deviceList" style="max-height: calc(100vh - 250px);">
+                        <div class="empty">Click "Scan Network" to discover devices</div>
+                    </div>
+                </div>
+                <div class="network-map">
+                    <canvas id="networkCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ASSETS VIEW -->
+        <div class="view" id="view-assets">
+            <div class="view-header">
+                <h1 class="view-title">Assets</h1>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Total Devices</div><div class="stat-value">2</div></div>
+                <div class="stat-card"><div class="stat-label">Online</div><div class="stat-value success">2</div></div>
+                <div class="stat-card"><div class="stat-label">Offline</div><div class="stat-value">0</div></div>
+                <div class="stat-card"><div class="stat-label">Alerts</div><div class="stat-value warning">0</div></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><div class="panel-title">Asset Inventory</div></div>
+                <div class="panel-content"><div class="empty">Network scan required to discover assets</div></div>
+            </div>
+        </div>
+        
+        <!-- SETTINGS VIEW -->
+        <div class="view" id="view-settings">
+            <div class="view-header">
+                <h1 class="view-title">Settings</h1>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">AI Configuration</div>
+                <div class="setting-row">
+                    <div><div class="setting-label">AI Provider</div><div class="setting-desc">LLM provider for threat analysis</div></div>
+                    <select class="input" id="settingProvider"><option value="ollama" selected>Ollama (Local)</option><option value="anthropic">Anthropic</option><option value="openai">OpenAI</option></select>
+                </div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Model</div><div class="setting-desc">AI model for analysis</div></div>
+                    <select class="input" id="settingModel"><option value="deepseek-r1:70b" selected>deepseek-r1:70b</option><option value="qwen3:32b">qwen3:32b</option><option value="qwen3:14b">qwen3:14b</option></select>
+                </div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Auto-Actions</div><div class="setting-desc">Allow AI to take defensive actions automatically</div></div>
+                    <div class="toggle" id="settingAutoActions" onclick="this.classList.toggle('on')"></div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">Monitoring</div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Analysis Interval</div><div class="setting-desc">Seconds between AI analyses</div></div>
+                    <input type="number" class="input" value="10" id="settingInterval" style="width: 100px;">
+                </div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Desktop Notifications</div><div class="setting-desc">Show alerts as system notifications</div></div>
+                    <div class="toggle on" id="settingNotify" onclick="this.classList.toggle('on')"></div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">About</div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Version</div></div>
+                    <div style="color: var(--text-dim);">0.6.0</div>
+                </div>
+                <div class="setting-row">
+                    <div><div class="setting-label">Model Active</div></div>
+                    <div style="color: var(--accent);" id="activeModel">deepseek-r1:70b</div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav">
+        <button class="active" data-view="dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </button>
+        <button data-view="threats">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </button>
+        <button data-view="events">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <button data-view="network">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><path d="M6 7l4 4m4 0l4-4"/></svg>
+        </button>
+        <button data-view="settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+    </nav>
+    
+    <script>
+        let ws = null;
+        let paused = false;
+        let stats = { threats: 0, events: 0, critical: 0, analyses: 0 };
+        let threats = [];
+        let events = [];
+        let activityChart = null;
+        let chartData = new Array(24).fill(0);
+        
+        // Navigation (both sidebar and mobile)
+        function switchView(view) {
+            if (!view) return;
+            // Update sidebar nav
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll(`.nav-btn[data-view="${view}"]`).forEach(b => b.classList.add('active'));
+            // Update mobile nav
+            document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll(`.mobile-nav button[data-view="${view}"]`).forEach(b => b.classList.add('active'));
+            // Switch view
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            if (view === 'network') setTimeout(drawNetwork, 100);
+        }
+        
+        document.querySelectorAll('.nav-btn, .mobile-nav button').forEach(btn => {
+            btn.addEventListener('click', () => switchView(btn.dataset.view));
+        });
+        
+        // Chart
+        function initChart() {
+            const ctx = document.getElementById('activityChart');
+            if (!ctx) return;
+            activityChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{ data: chartData, backgroundColor: 'rgba(255,140,0,0.5)', borderColor: '#ff8c00', borderWidth: 1, borderRadius: 3 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#707080', font: { size: 9 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#707080' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        // Network map with real devices
+        function drawNetwork() {
+            const canvas = document.getElementById('networkCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width; canvas.height = rect.height;
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            const r = Math.min(canvas.width, canvas.height) * 0.4;
+            
+            // Clear
+            ctx.fillStyle = '#16161f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Radar circles
+            ctx.strokeStyle = 'rgba(255,140,0,0.1)'; ctx.lineWidth = 1;
+            for (let i = 1; i <= 4; i++) { ctx.beginPath(); ctx.arc(cx, cy, r * i / 4, 0, Math.PI * 2); ctx.stroke(); }
+            for (let i = 0; i < 8; i++) { const a = Math.PI * 2 * i / 8; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); ctx.stroke(); }
+            
+            // Find gateway
+            const gateway = networkDevices.find(d => d.is_gateway);
+            const local = networkDevices.find(d => d.is_local);
+            const others = networkDevices.filter(d => !d.is_gateway && !d.is_local);
+            
+            // Center node (gateway or router icon)
+            ctx.fillStyle = 'rgba(255,140,0,0.3)'; ctx.beginPath(); ctx.arc(cx, cy, 24, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ff8c00'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center';
+            ctx.fillText(gateway ? 'Gateway' : 'Router', cx, cy + 4);
+            if (gateway) {
+                ctx.font = '9px system-ui'; ctx.fillStyle = '#707080';
+                ctx.fillText(gateway.ip_address, cx, cy + 40);
+            }
+            
+            // Draw other devices in a circle
+            const devicesToDraw = others.slice(0, 20); // Limit to 20 for clarity
+            const angleStep = (Math.PI * 2) / Math.max(devicesToDraw.length, 1);
+            
+            devicesToDraw.forEach((device, i) => {
+                const angle = angleStep * i - Math.PI / 2; // Start from top
+                const dist = r * 0.7;
+                const dx = cx + Math.cos(angle) * dist;
+                const dy = cy + Math.sin(angle) * dist;
+                
+                // Connection line
+                ctx.strokeStyle = 'rgba(255,140,0,0.2)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(dx, dy); ctx.stroke();
+                
+                // Device node
+                const color = getDeviceColor(device.device_type);
+                ctx.fillStyle = color + '40'; ctx.beginPath(); ctx.arc(dx, dy, 14, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+                
+                // Label
+                ctx.fillStyle = '#e0e0e0'; ctx.font = '9px system-ui'; ctx.textAlign = 'center';
+                const name = device.hostname || device.manufacturer || device.device_type || device.ip_address.split('.').pop();
+                ctx.fillText(name.substring(0, 12), dx, dy + 28);
+            });
+            
+            // Draw local device prominently
+            if (local) {
+                const ldx = cx + r * 0.5, ldy = cy + r * 0.3;
+                ctx.strokeStyle = 'rgba(46,213,115,0.3)'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ldx, ldy); ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(46,213,115,0.3)'; ctx.beginPath(); ctx.arc(ldx, ldy, 18, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#2ed573'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 9px system-ui';
+                ctx.fillText('This PC', ldx, ldy + 4);
+                ctx.font = '8px system-ui'; ctx.fillStyle = '#707080';
+                ctx.fillText(local.ip_address, ldx, ldy + 32);
+            }
+            
+            // Device count label
+            ctx.fillStyle = '#707080'; ctx.font = '11px system-ui'; ctx.textAlign = 'left';
+            ctx.fillText(`${networkDevices.length} devices`, 10, canvas.height - 10);
+        }
+        
+        function getDeviceColor(type) {
+            const colors = {
+                router: '#ff8c00',
+                access_point: '#ff8c00',
+                streaming_device: '#9b59b6',
+                smart_tv: '#9b59b6',
+                speaker: '#3498db',
+                nas: '#2ecc71',
+                server: '#2ecc71',
+                smartphone: '#e74c3c',
+                tablet: '#e74c3c',
+                laptop: '#3498db',
+                desktop: '#3498db',
+                game_console: '#e91e63',
+                camera: '#ff5722',
+                voice_assistant: '#00bcd4',
+                printer: '#795548',
+            };
+            return colors[type] || '#707080';
+        }
+        
+        // WebSocket
+        function connect() {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${location.host}/ws`);
+            ws.onopen = () => { document.getElementById('statusDot').classList.add('online'); document.getElementById('statusText').textContent = 'Connected'; };
+            ws.onclose = () => { document.getElementById('statusDot').classList.remove('online'); document.getElementById('statusText').textContent = 'Disconnected'; setTimeout(connect, 3000); };
+            ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
+        }
+        
+        function handleMessage(msg) {
+            if (msg.type === 'init') { events = msg.data.events || []; threats = msg.data.threats || []; renderAll(); }
+            else if (msg.type === 'event' && !paused) {
+                events.push(msg.data); if (events.length > 200) events.shift();
+                stats.events++;
+                chartData[new Date().getHours()]++;
+                if (activityChart) activityChart.update('none');
+                renderEvents(); updateStats();
+            }
+            else if (msg.type === 'threat') {
+                threats.unshift(msg.data); if (threats.length > 100) threats.pop();
+                stats.threats++; stats.analyses++;
+                if (msg.data.severity === 'CRITICAL') stats.critical++;
+                renderThreats(); updateStats();
+                if (msg.data.severity === 'CRITICAL') { document.body.style.boxShadow = 'inset 0 0 50px rgba(255,71,87,0.3)'; setTimeout(() => document.body.style.boxShadow = '', 300); }
+            }
+        }
+        
+        function renderThreats() {
+            const html = threats.length ? threats.slice(0, 20).map(t => `
+                <div class="threat-item">
+                    <div class="threat-sev ${t.severity.toLowerCase()}"></div>
+                    <div class="threat-info">
+                        <div class="threat-title">${esc(t.threat_type)}</div>
+                        <div class="threat-meta"><span class="threat-badge ${t.severity.toLowerCase()}">${t.severity}</span> ${Math.round(t.confidence * 100)}%</div>
+                    </div>
+                    <div class="threat-time">${formatTime(t.timestamp)}</div>
+                </div>
+            `).join('') : '<div class="empty">No threats detected</div>';
+            document.getElementById('dashThreatList').innerHTML = html;
+            document.getElementById('threatList').innerHTML = threats.length ? threats.map(t => `
+                <div class="threat-item">
+                    <div class="threat-sev ${t.severity.toLowerCase()}"></div>
+                    <div class="threat-info">
+                        <div class="threat-title">${esc(t.threat_type)}</div>
+                        <div class="threat-meta"><span class="threat-badge ${t.severity.toLowerCase()}">${t.severity}</span> ${Math.round(t.confidence * 100)}% - ${esc(t.description || '').substring(0, 100)}</div>
+                    </div>
+                    <div class="threat-time">${formatTime(t.timestamp)}</div>
+                </div>
+            `).join('') : '<div class="empty">No threats detected</div>';
+            document.getElementById('threatBadge').textContent = threats.length;
+        }
+        
+        function renderEvents() {
+            const html = events.length ? events.slice(-100).reverse().map(e => `
+                <div class="event-row">
+                    <span class="event-time">${formatTime(e.timestamp)}</span>
+                    <span class="event-source">[${e.source}]</span>
+                    <span class="event-id">ID:${e.event_code}</span>
+                    <span class="event-msg">${esc(e.process || e.command_line || e.message || '')}</span>
+                </div>
+            `).join('') : '<div class="empty">Waiting for events...</div>';
+            document.getElementById('dashEventList').innerHTML = html;
+            document.getElementById('eventList').innerHTML = html;
+        }
+        
+        function renderAll() { renderThreats(); renderEvents(); updateStats(); }
+        
+        function updateStats() {
+            document.getElementById('statThreats').textContent = stats.threats;
+            document.getElementById('statEvents').textContent = stats.events.toLocaleString();
+            document.getElementById('statCritical').textContent = stats.critical;
+            document.getElementById('statAnalyses').textContent = stats.analyses;
+        }
+        
+        function formatTime(iso) { if (!iso) return '--:--'; return new Date(iso).toLocaleTimeString('en-US', { hour12: false }); }
+        function esc(s) { return s ? String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) : ''; }
+        
+        // Buttons
+        document.getElementById('pauseBtn').addEventListener('click', function() { paused = !paused; this.textContent = paused ? 'Resume' : 'Pause'; });
+        document.getElementById('clearEventsBtn').addEventListener('click', () => { events = []; renderEvents(); });
+        
+        // Network scanning
+        let networkDevices = [];
+        let scanInProgress = false;
+        
+        const deviceIcons = {
+            router: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M2 12h20"/></svg>',
+            access_point: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>',
+            desktop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>',
+            laptop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M4 19V7a2 2 0 012-2h12a2 2 0 012 2v12M4 19l-2 2h20l-2-2"/></svg>',
+            smartphone: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
+            smart_tv: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>',
+            streaming_device: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16"/></svg>',
+            speaker: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="14" r="4"/><path d="M12 6h.01"/></svg>',
+            nas: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>',
+            printer: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+            game_console: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4m-2-2v4m10-2h.01M16 10h.01"/></svg>',
+            camera: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            voice_assistant: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8"/></svg>',
+            server: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>',
+            unknown: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>',
+        };
+        
+        function getDeviceIcon(type) {
+            return deviceIcons[type] || deviceIcons.unknown;
+        }
+        
+        async function scanNetwork() {
+            if (scanInProgress) return;
+            
+            scanInProgress = true;
+            document.getElementById('scanNetworkBtn').disabled = true;
+            document.getElementById('scanNetworkBtn').textContent = 'Scanning...';
+            document.getElementById('scanStatus').textContent = 'Discovering devices...';
+            document.getElementById('deviceList').innerHTML = '<div class="empty">Scanning network...</div>';
+            
+            try {
+                const response = await fetch('/api/network/scan', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    networkDevices = data.devices || [];
+                    renderNetworkDevices();
+                    document.getElementById('scanStatus').textContent = `Found ${networkDevices.length} devices`;
+                } else {
+                    document.getElementById('scanStatus').textContent = 'Scan failed: ' + (data.error || 'Unknown error');
+                    document.getElementById('deviceList').innerHTML = '<div class="empty">Scan failed. Try again.</div>';
+                }
+            } catch (e) {
+                document.getElementById('scanStatus').textContent = 'Scan error: ' + e.message;
+                document.getElementById('deviceList').innerHTML = '<div class="empty">Network error. Try again.</div>';
+            } finally {
+                scanInProgress = false;
+                document.getElementById('scanNetworkBtn').disabled = false;
+                document.getElementById('scanNetworkBtn').textContent = 'Scan Network';
+            }
+        }
+        
+        function renderNetworkDevices() {
+            const container = document.getElementById('deviceList');
+            document.getElementById('deviceCount').textContent = networkDevices.length;
+            
+            if (!networkDevices.length) {
+                container.innerHTML = '<div class="empty">No devices found</div>';
+                return;
+            }
+            
+            // Sort: gateway first, then local, then by type, then by IP
+            const sorted = [...networkDevices].sort((a, b) => {
+                if (a.is_gateway) return -1;
+                if (b.is_gateway) return 1;
+                if (a.is_local) return -1;
+                if (b.is_local) return 1;
+                if (a.device_type !== b.device_type) return a.device_type.localeCompare(b.device_type);
+                return a.ip_address.localeCompare(b.ip_address);
+            });
+            
+            container.innerHTML = sorted.map(device => {
+                const name = device.hostname || device.netbios_name || device.mdns_name || '-';
+                const type = device.device_type || 'unknown';
+                const icon = getDeviceIcon(type);
+                const vendor = device.manufacturer || '';
+                
+                let badge = '';
+                if (device.is_gateway) badge = '<span style="font-size:0.65rem;color:var(--accent);margin-left:0.5rem;">(gateway)</span>';
+                else if (device.is_local) badge = '<span style="font-size:0.65rem;color:var(--success);margin-left:0.5rem;">(this device)</span>';
+                
+                const ports = device.open_ports?.slice(0, 4).join(', ') || '';
+                
+                return `
+                    <div class="device-item" title="${type}: ${vendor}${ports ? ' | Ports: ' + ports : ''}">
+                        <div class="device-icon">${icon}</div>
+                        <div class="device-info">
+                            <div class="device-name">${esc(name)}${badge}</div>
+                            <div class="device-ip">${device.ip_address}${vendor ? ' - ' + esc(vendor) : ''}</div>
+                        </div>
+                        <div class="device-status online"></div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Redraw network map
+            drawNetwork();
+        }
+        
+        document.getElementById('scanNetworkBtn').addEventListener('click', scanNetwork);
+        
+        // Load existing devices on page load
+        async function loadNetworkDevices() {
+            try {
+                const response = await fetch('/api/network/devices');
+                const data = await response.json();
+                if (data.devices && data.devices.length > 0) {
+                    networkDevices = data.devices;
+                    renderNetworkDevices();
+                    document.getElementById('scanStatus').textContent = `${networkDevices.length} devices in inventory`;
+                }
+            } catch (e) {
+                console.log('Could not load network devices:', e);
+            }
+        }
+        
+        // Handle resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (document.getElementById('view-network').classList.contains('active')) {
+                    drawNetwork();
+                }
+                if (activityChart) {
+                    activityChart.resize();
+                }
+            }, 200);
+        });
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => { 
+            initChart(); 
+            connect(); 
+            loadNetworkDevices();
+        });
+    </script>
+</body>
+</html>

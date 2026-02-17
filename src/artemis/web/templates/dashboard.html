@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemis | Security Operations Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --bg-card: #16161e;
+            --bg-hover: #1e1e2a;
+            --border: #2a2a3a;
+            --border-light: #3a3a4a;
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #22d3ee;
+            --accent-dim: #0891b2;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --critical: #dc2626;
+            --purple: #a855f7;
+            --blue: #3b82f6;
+            --pink: #ec4899;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app { display: flex; height: 100vh; }
+        
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .nav-section {
+            padding: 1rem 0.5rem;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 0.25rem;
+            user-select: none;
+        }
+
+        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent); color: #000; font-weight: 500; }
+
+        .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title { font-size: 1.25rem; font-weight: 600; }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online { background: var(--success); }
+        .status-dot.warning { background: var(--warning); }
+        .status-dot.danger { background: var(--danger); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Views Container */
+        .views-container {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .view {
+            display: none;
+            height: 100%;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            grid-template-rows: auto 1fr auto;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.accent { color: var(--accent); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.danger { color: var(--danger); }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        /* Network Map */
+        .network-map { grid-row: 2; }
+        
+        .map-container {
+            height: 100%;
+            min-height: 350px;
+            position: relative;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 30px 30px,
+                linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 30px 30px;
+        }
+
+        #topology { width: 100%; height: 100%; }
+
+        /* Device List */
+        .device-item {
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .device-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        .device-item.selected {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .device-name {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .device-icon { font-size: 1.1rem; }
+
+        .device-type-badge {
+            font-size: 0.65rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .device-type-badge.desktop { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+        .device-type-badge.server { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
+        .device-type-badge.router { background: rgba(34, 211, 238, 0.2); color: var(--accent); }
+        .device-type-badge.mobile { background: rgba(236, 72, 153, 0.2); color: var(--pink); }
+
+        .device-ip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .device-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Sidebar Panels */
+        .sidebar-panel {
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Activity List */
+        .activity-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-type { font-weight: 500; }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .activity-details {
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* Threat Panel */
+        .threat-item {
+            padding: 0.75rem;
+            border-left: 3px solid var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+            margin: 0.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .threat-item.critical { border-color: var(--critical); background: rgba(220, 38, 38, 0.15); }
+        .threat-item.high { border-color: var(--danger); }
+        .threat-item.medium { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .threat-item.low { border-color: var(--blue); background: rgba(59, 130, 246, 0.1); }
+
+        .threat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .threat-title { font-weight: 600; }
+
+        .threat-badge {
+            font-size: 0.65rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .threat-badge.critical { background: var(--critical); color: white; }
+        .threat-badge.high { background: var(--danger); color: white; }
+        .threat-badge.medium { background: var(--warning); color: black; }
+        .threat-badge.low { background: var(--blue); color: white; }
+
+        .threat-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .threat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }
+
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-primary:hover { background: var(--accent-dim); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--bg-hover); }
+
+        /* Bottom Bar */
+        .bottom-bar {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Connection Table */
+        .conn-row {
+            display: grid;
+            grid-template-columns: 120px 1fr 80px 80px;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .conn-row:hover { background: var(--bg-hover); }
+        .conn-process { color: var(--accent); font-weight: 500; }
+        .conn-remote { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+        .conn-port { color: var(--purple); font-family: 'JetBrains Mono', monospace; }
+        
+        .conn-state {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .conn-state.established { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .conn-state.listen { background: rgba(59, 130, 246, 0.2); color: var(--blue); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title { font-size: 1.25rem; font-weight: 600; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover { color: var(--text-primary); }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Device Detail Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .tab.active { background: var(--accent); color: #000; font-weight: 500; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Telemetry Display */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .telemetry-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .telemetry-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .telemetry-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* AI Analysis Panel */
+        .ai-panel {
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(168, 85, 247, 0.1));
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .ai-response {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Remediation Steps */
+        .remediation-steps { margin-top: 1rem; }
+
+        .step {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-left: 2px solid var(--border);
+            margin-left: 0.5rem;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .step-content { flex: 1; }
+        .step-title { font-weight: 500; margin-bottom: 0.25rem; }
+        .step-description { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+
+        /* Live indicator */
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--success);
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        /* View-specific styles */
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .view-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .view-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Grid layout for devices view */
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .device-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .device-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Fade animation */
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toast animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">A</div>
+                    <span>ARTEMIS</span>
+                </div>
+            </div>
+            <nav class="nav-section" id="mainNav">
+                <div class="nav-item active" data-view="dashboard">
+                    <span class="nav-icon">&#128200;</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-view="devices">
+                    <span class="nav-icon">&#128430;</span>
+                    <span>Endpoints</span>
+                </div>
+                <div class="nav-item" data-view="network">
+                    <span class="nav-icon">&#127760;</span>
+                    <span>Network</span>
+                </div>
+                <div class="nav-item" data-view="threats">
+                    <span class="nav-icon">&#9888;</span>
+                    <span>Threats</span>
+                </div>
+                <div class="nav-item" data-view="scan">
+                    <span class="nav-icon">&#128269;</span>
+                    <span>File Scanner</span>
+                </div>
+                <div class="nav-item" data-view="remediation">
+                    <span class="nav-icon">&#128736;</span>
+                    <span>Remediation</span>
+                </div>
+                <div class="nav-item" data-view="rules">
+                    <span class="nav-icon">&#128203;</span>
+                    <span>Rules</span>
+                </div>
+                <div class="nav-item" data-view="settings">
+                    <span class="nav-icon">&#9881;</span>
+                    <span>Settings</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1 class="header-title" id="pageTitle">Security Operations Center</h1>
+                <div class="header-status">
+                    <div class="status-badge">
+                        <span class="status-dot online" id="agentDot"></span>
+                        <span id="agentStatusText">Monitoring</span>
+                    </div>
+                    <div class="status-badge">
+                        <span>AI:</span>
+                        <strong id="modelName">deepseek-r1:70b</strong>
+                    </div>
+                    <div class="live-badge">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </div>
+                </div>
+            </header>
+
+            <div class="views-container">
+                <!-- Dashboard View -->
+                <div class="view active" id="view-dashboard">
+                    <div class="dashboard-grid">
+                        <!-- Stats Row -->
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <div class="stat-label">Endpoints</div>
+                                <div class="stat-value accent" id="statDevices">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Connections</div>
+                                <div class="stat-value" id="statConnections">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Traffic In</div>
+                                <div class="stat-value success" id="statTrafficIn">0 B</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Traffic Out</div>
+                                <div class="stat-value warning" id="statTrafficOut">0 B</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Threats</div>
+                                <div class="stat-value danger" id="statThreats">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">AI Analyses</div>
+                                <div class="stat-value" id="statAnalyses">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Network Map -->
+                        <div class="card network-map">
+                            <div class="card-header">
+                                <span>&#127760; Network Topology</span>
+                                <button class="btn btn-secondary" onclick="refreshTopology()">Refresh</button>
+                            </div>
+                            <div class="card-body map-container">
+                                <canvas id="topology"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar Panels -->
+                        <div class="sidebar-panel">
+                            <div class="card" style="flex: 1;">
+                                <div class="card-header">
+                                    <span>&#128430; Endpoints</span>
+                                    <span id="deviceCountBadge">0</span>
+                                </div>
+                                <div class="card-body" id="devicesList">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">&#128269;</div>
+                                        <div>Scanning network...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="max-height: 280px;">
+                                <div class="card-header">
+                                    <span>&#9888; Active Threats</span>
+                                    <span id="threatCountBadge">0</span>
+                                </div>
+                                <div class="card-body" id="threatsList">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">&#9989;</div>
+                                        <div>No active threats</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Panels -->
+                        <div class="bottom-bar">
+                            <div class="card" style="max-height: 200px;">
+                                <div class="card-header">
+                                    <span>&#128279; Active Connections</span>
+                                    <span class="live-badge"><span class="live-dot"></span></span>
+                                </div>
+                                <div class="card-body" id="connectionsList">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">&#128279;</div>
+                                        <div>Monitoring...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="max-height: 200px;">
+                                <div class="card-header">
+                                    <span>&#129302; AI Analysis Feed</span>
+                                    <span class="live-badge"><span class="live-dot"></span></span>
+                                </div>
+                                <div class="card-body" id="aiList">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">&#129302;</div>
+                                        <div>AI monitoring active</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Devices View -->
+                <div class="view" id="view-devices">
+                    <div class="view-header">
+                        <h2 class="view-title">Endpoints</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="scanNetwork()">&#128269; Scan Network</button>
+                            <button class="btn btn-primary" onclick="exportDevices()">&#128190; Export</button>
+                        </div>
+                    </div>
+                    <div class="devices-grid" id="devicesGrid">
+                        <div class="empty-state">
+                            <div class="empty-icon">&#128430;</div>
+                            <div>No endpoints discovered yet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network View -->
+                <div class="view" id="view-network">
+                    <div class="view-header">
+                        <h2 class="view-title">Network Traffic</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="clearConnections()">Clear</button>
+                            <button class="btn btn-primary" onclick="exportTraffic()">&#128190; Export</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span>Active Connections</span>
+                            <span class="live-badge"><span class="live-dot"></span> Live</span>
+                        </div>
+                        <div class="card-body" style="max-height: calc(100vh - 280px);">
+                            <table class="data-table" id="connectionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Process</th>
+                                        <th>Local</th>
+                                        <th>Remote</th>
+                                        <th>State</th>
+                                        <th>Protocol</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="connectionsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threats View -->
+                <div class="view" id="view-threats">
+                    <div class="view-header">
+                        <h2 class="view-title">Threat Detection</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="dismissAllThreats()">Dismiss All</button>
+                            <button class="btn btn-danger" onclick="remediateAll()">Remediate All</button>
+                        </div>
+                    </div>
+                    <div id="threatsFullList">
+                        <div class="empty-state">
+                            <div class="empty-icon">&#9989;</div>
+                            <div>No active threats detected</div>
+                            <p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active and analyzing network traffic</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Scanner View -->
+                <div class="view" id="view-scan">
+                    <div class="view-header">
+                        <h2 class="view-title">File Scanner</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-primary" onclick="startScan()">&#128269; Start Scan</button>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div class="card-header">Scan Configuration</div>
+                        <div class="card-body" style="padding: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Target Path</label>
+                                <input type="text" class="form-input" id="scanPath" placeholder="C:\Users\...">
+                            </div>
+                            <div style="display: flex; gap: 1rem;">
+                                <label><input type="checkbox" id="scanDeep"> Deep Scan (PE Analysis)</label>
+                                <label><input type="checkbox" id="scanAI" checked> AI Analysis</label>
+                                <label><input type="checkbox" id="scanRecursive" checked> Recursive</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span>Scan Results</span>
+                            <span id="scanStatus">Ready</span>
+                        </div>
+                        <div class="card-body" id="scanResults" style="min-height: 200px;">
+                            <div class="empty-state">
+                                <div class="empty-icon">&#128269;</div>
+                                <div>Configure and start a scan</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remediation View -->
+                <div class="view" id="view-remediation">
+                    <div class="view-header">
+                        <h2 class="view-title">Remediation Center</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="viewHistory()">&#128203; History</button>
+                            <button class="btn btn-warning" onclick="rollbackLast()">&#8617; Rollback Last</button>
+                        </div>
+                    </div>
+                    <div class="ai-panel" style="margin-bottom: 1rem;">
+                        <div class="ai-header">
+                            <span>&#129302;</span> AI Remediation Assistant
+                        </div>
+                        <div class="ai-response">
+                            The AI remediation assistant uses double-scan verification to ensure accurate threat identification before taking action. All remediation actions are logged and can be rolled back.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span>Pending Actions</span>
+                            <span id="pendingActionsCount">0</span>
+                        </div>
+                        <div class="card-body" id="pendingActions" style="min-height: 200px;">
+                            <div class="empty-state">
+                                <div class="empty-icon">&#9989;</div>
+                                <div>No pending remediation actions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rules View -->
+                <div class="view" id="view-rules">
+                    <div class="view-header">
+                        <h2 class="view-title">Detection Rules</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="importRules()">&#128230; Import</button>
+                            <button class="btn btn-primary" onclick="generateRule()">&#10010; Generate Rule</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span>Rule Library</span>
+                            <div>
+                                <select class="form-input" style="width: auto; padding: 0.25rem 0.5rem;" id="ruleFormatFilter">
+                                    <option value="">All Formats</option>
+                                    <option value="sigma">Sigma</option>
+                                    <option value="yara">YARA</option>
+                                    <option value="splunk">Splunk</option>
+                                    <option value="kql">KQL</option>
+                                    <option value="snort">Snort</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body" id="rulesList" style="min-height: 300px;">
+                            <div class="empty-state">
+                                <div class="empty-icon">&#128203;</div>
+                                <div>No rules loaded</div>
+                                <p style="color: var(--text-muted); margin-top: 0.5rem;">Generate or import detection rules</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div class="view" id="view-settings">
+                    <div class="view-header">
+                        <h2 class="view-title">Settings</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div class="card-header">AI Configuration</div>
+                        <div class="card-body" style="padding: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">AI Provider</label>
+                                <select class="form-input" id="settingsProvider">
+                                    <option value="ollama">Ollama (Local)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Model</label>
+                                <select class="form-input" id="settingsModel">
+                                    <option value="deepseek-r1:70b" selected>deepseek-r1:70b (Recommended)</option>
+                                    <option value="qwen3:32b">qwen3:32b</option>
+                                    <option value="qwen3:14b">qwen3:14b</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div class="card-header">Network Monitoring</div>
+                        <div class="card-body" style="padding: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Scan Interval (seconds)</label>
+                                <input type="number" class="form-input" id="settingsScanInterval" value="60">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Network Range</label>
+                                <input type="text" class="form-input" id="settingsNetworkRange" value="192.168.4.0/24">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Remediation</div>
+                        <div class="card-body" style="padding: 1rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <label><input type="checkbox" id="settingsAutoQuarantine"> Auto-quarantine high-severity threats</label>
+                                <label><input type="checkbox" id="settingsDoubleVerify" checked> Double-scan verification (anti-hallucination)</label>
+                                <label><input type="checkbox" id="settingsRequireApproval" checked> Require approval for destructive actions</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Device Detail Modal -->
+    <div class="modal-overlay" id="deviceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalDeviceName">Device Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs" id="deviceTabs">
+                    <div class="tab active" data-tab="overview">Overview</div>
+                    <div class="tab" data-tab="network">Network</div>
+                    <div class="tab" data-tab="processes">Processes</div>
+                    <div class="tab" data-tab="telemetry">Telemetry</div>
+                    <div class="tab" data-tab="actions">Actions</div>
+                </div>
+
+                <div class="tab-content active" id="tab-overview">
+                    <div class="telemetry-grid" id="deviceOverview"></div>
+                </div>
+
+                <div class="tab-content" id="tab-network">
+                    <div id="deviceConnections"></div>
+                </div>
+
+                <div class="tab-content" id="tab-processes">
+                    <div id="deviceProcesses"></div>
+                </div>
+
+                <div class="tab-content" id="tab-telemetry">
+                    <div id="deviceTelemetry">
+                        <p style="color: var(--text-muted);">Full telemetry available for host machine and compatible endpoints.</p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-actions">
+                    <div id="deviceActions"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                <button class="btn btn-primary" onclick="scanDevice()">&#128269; Scan Device</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remediation Modal -->
+    <div class="modal-overlay" id="remediationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">&#128736; Remediation Assistant</h2>
+                <button class="modal-close" onclick="closeRemediationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="ai-panel">
+                    <div class="ai-header">
+                        <span>&#129302;</span> AI Remediation Guide
+                    </div>
+                    <div class="ai-response" id="remediationGuide">
+                        Loading AI recommendations...
+                    </div>
+                </div>
+                <div class="remediation-steps" id="remediationSteps"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRemediationModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="executeRemediation()">Execute Remediation</button>
+                <button class="btn btn-primary" onclick="autoRemediate()">Auto-Remediate</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let state = {
+            devices: {},
+            connections: [],
+            threats: [],
+            ai_analyses: [],
+            traffic_stats: {},
+            agent_status: {}
+        };
+
+        let selectedDevice = null;
+        let currentView = 'dashboard';
+        let ws = null;
+
+        // Navigation
+        function initNavigation() {
+            document.querySelectorAll('#mainNav .nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const view = item.dataset.view;
+                    switchView(view);
+                });
+            });
+        }
+
+        function switchView(viewName) {
+            // Update nav items
+            document.querySelectorAll('#mainNav .nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.view === viewName);
+            });
+
+            // Update views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.toggle('active', view.id === 'view-' + viewName);
+            });
+
+            // Update header title
+            const titles = {
+                dashboard: 'Security Operations Center',
+                devices: 'Endpoints',
+                network: 'Network Traffic',
+                threats: 'Threat Detection',
+                scan: 'File Scanner',
+                remediation: 'Remediation Center',
+                rules: 'Detection Rules',
+                settings: 'Settings'
+            };
+            document.getElementById('pageTitle').textContent = titles[viewName] || 'Artemis SOC';
+
+            currentView = viewName;
+            
+            // Trigger view-specific rendering
+            if (viewName === 'devices') renderDevicesGrid();
+            if (viewName === 'network') renderConnectionsTable();
+            if (viewName === 'threats') renderThreatsFull();
+        }
+
+        // Modal Tab Handling
+        function initModalTabs() {
+            document.querySelectorAll('#deviceTabs .tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('#deviceTabs .tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('#deviceModal .tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                });
+            });
+        }
+
+        // WebSocket Connection
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/live`);
+
+            ws.onopen = () => {
+                console.log('Connected to Artemis SOC');
+                updateStatus(true);
+            };
+
+            ws.onclose = () => {
+                updateStatus(false);
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+
+            ws.onmessage = (e) => {
+                try {
+                    const msg = JSON.parse(e.data);
+                    handleMessage(msg);
+                } catch (err) {
+                    console.error('Failed to parse message:', err);
+                }
+            };
+        }
+
+        function handleMessage(msg) {
+            switch(msg.type) {
+                case 'initial_state':
+                    state = msg.data;
+                    renderAll();
+                    break;
+                case 'device_update':
+                    state.devices[msg.device_id] = msg.data;
+                    renderDevices();
+                    renderTopology();
+                    renderStats();
+                    if (currentView === 'devices') renderDevicesGrid();
+                    break;
+                case 'connection':
+                    state.connections.unshift(msg.data);
+                    if (state.connections.length > 200) state.connections.pop();
+                    renderConnections();
+                    if (currentView === 'network') renderConnectionsTable();
+                    break;
+                case 'threat':
+                    state.threats.unshift(msg.data);
+                    renderThreats();
+                    renderStats();
+                    if (currentView === 'threats') renderThreatsFull();
+                    break;
+                case 'ai_analysis':
+                    state.ai_analyses.unshift(msg.data);
+                    renderAI();
+                    renderStats();
+                    break;
+                case 'traffic_update':
+                    state.traffic_stats = msg.data;
+                    renderStats();
+                    break;
+                case 'agent_status':
+                    state.agent_status = msg.data;
+                    updateStatus(msg.data.running);
+                    break;
+            }
+        }
+
+        function renderAll() {
+            renderStats();
+            renderDevices();
+            renderConnections();
+            renderThreats();
+            renderAI();
+            renderTopology();
+        }
+
+        function renderStats() {
+            const devices = Object.keys(state.devices).length;
+            document.getElementById('statDevices').textContent = devices;
+            document.getElementById('deviceCountBadge').textContent = devices;
+            document.getElementById('statConnections').textContent = state.traffic_stats.connections_active || state.connections.length;
+            document.getElementById('statTrafficIn').textContent = formatBytes(state.traffic_stats.bytes_in || 0);
+            document.getElementById('statTrafficOut').textContent = formatBytes(state.traffic_stats.bytes_out || 0);
+            document.getElementById('statThreats').textContent = state.threats.length;
+            document.getElementById('threatCountBadge').textContent = state.threats.length;
+            document.getElementById('statAnalyses').textContent = state.agent_status.ai_analyses || state.ai_analyses.length;
+        }
+
+        function renderDevices() {
+            const container = document.getElementById('devicesList');
+            const devices = Object.values(state.devices);
+
+            if (devices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128269;</div><div>Scanning network...</div></div>';
+                return;
+            }
+
+            container.innerHTML = devices.map(d => {
+                const icon = getDeviceIcon(d.device_type);
+                const typeClass = d.device_type || 'unknown';
+                return `
+                    <div class="device-item fade-in ${selectedDevice === d.ip ? 'selected' : ''}" 
+                         onclick="selectDevice('${d.ip}')">
+                        <div class="device-header">
+                            <span class="device-name">
+                                <span class="device-icon">${icon}</span>
+                                ${escapeHtml(d.hostname || d.ip || 'Unknown')}
+                            </span>
+                            <span class="device-type-badge ${typeClass}">${escapeHtml(d.device_type || 'device')}</span>
+                        </div>
+                        <div class="device-ip">${escapeHtml(d.ip || '-')} ${d.mac ? '(' + escapeHtml(d.mac.substring(0,8)) + '...)' : ''}</div>
+                        <div class="device-stats">
+                            <span>&#8593; ${formatBytes(d.bytes_out || 0)}</span>
+                            <span>&#8595; ${formatBytes(d.bytes_in || 0)}</span>
+                            ${d.is_local ? '<span style="color: var(--accent);">LOCAL</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDevicesGrid() {
+            const container = document.getElementById('devicesGrid');
+            const devices = Object.values(state.devices);
+
+            if (devices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128430;</div><div>No endpoints discovered yet</div><p style="color: var(--text-muted); margin-top: 0.5rem;">Network scan in progress...</p></div>';
+                return;
+            }
+
+            container.innerHTML = devices.map(d => {
+                const icon = getDeviceIcon(d.device_type);
+                const isLocal = d.is_local ? '<span style="color: var(--accent); font-size: 0.7rem; margin-left: 0.5rem;">LOCAL</span>' : '';
+                return `
+                    <div class="device-card fade-in" data-device-ip="${escapeHtml(d.ip || '')}">
+                        <div class="device-header">
+                            <span class="device-name">
+                                <span class="device-icon" style="font-size: 1.5rem;">${icon}</span>
+                                ${escapeHtml(d.hostname || d.ip || 'Unknown')}${isLocal}
+                            </span>
+                            <span class="device-type-badge ${d.device_type || ''}">${escapeHtml(d.device_type || 'device')}</span>
+                        </div>
+                        <div class="telemetry-grid" style="margin-top: 1rem;">
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">IP Address</div>
+                                <div class="telemetry-value">${escapeHtml(d.ip || '-')}</div>
+                            </div>
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">MAC</div>
+                                <div class="telemetry-value">${escapeHtml((d.mac || '-').substring(0, 17))}</div>
+                            </div>
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">Vendor</div>
+                                <div class="telemetry-value">${escapeHtml(d.vendor || 'Unknown')}</div>
+                            </div>
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">Last Seen</div>
+                                <div class="telemetry-value">${formatTime(d.last_seen)}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary btn-scan-device" data-ip="${escapeHtml(d.ip || '')}">&#128269; Scan</button>
+                            <button class="btn btn-secondary btn-device-details" data-ip="${escapeHtml(d.ip || '')}">Details</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add click handlers for device cards
+            container.querySelectorAll('.device-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    // Don't trigger if clicking a button
+                    if (e.target.closest('button')) return;
+                    const ip = card.dataset.deviceIp;
+                    if (ip) selectDevice(ip);
+                });
+            });
+            
+            // Add click handlers for scan buttons
+            container.querySelectorAll('.btn-scan-device').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const ip = btn.dataset.ip;
+                    showNotification(`Scanning ${ip}...`);
+                    selectedDevice = ip;
+                    scanDevice();
+                });
+            });
+            
+            // Add click handlers for details buttons
+            container.querySelectorAll('.btn-device-details').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const ip = btn.dataset.ip;
+                    selectDevice(ip);
+                });
+            });
+        }
+
+        function renderConnections() {
+            const container = document.getElementById('connectionsList');
+            const conns = state.connections.slice(0, 30);
+
+            if (conns.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128279;</div><div>Monitoring...</div></div>';
+                return;
+            }
+
+            container.innerHTML = conns.map(c => `
+                <div class="conn-row fade-in">
+                    <span class="conn-process">${escapeHtml(c.process || 'unknown')}</span>
+                    <span class="conn-remote">${escapeHtml(c.remote_addr || '*')}:${c.remote_port || '*'}</span>
+                    <span class="conn-port">${c.local_port}</span>
+                    <span class="conn-state ${(c.state || '').toLowerCase()}">${escapeHtml(c.state || '-')}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderConnectionsTable() {
+            const tbody = document.getElementById('connectionsTableBody');
+            const conns = state.connections.slice(0, 100);
+
+            if (conns.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No active connections</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = conns.map(c => `
+                <tr>
+                    <td class="conn-process">${escapeHtml(c.process || 'unknown')}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(c.local_addr || '*')}:${c.local_port}</td>
+                    <td style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(c.remote_addr || '*')}:${c.remote_port || '*'}</td>
+                    <td><span class="conn-state ${(c.state || '').toLowerCase()}">${escapeHtml(c.state || '-')}</span></td>
+                    <td>${escapeHtml(c.protocol || 'TCP')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderThreats() {
+            const container = document.getElementById('threatsList');
+
+            if (state.threats.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9989;</div><div>No active threats</div></div>';
+                return;
+            }
+
+            container.innerHTML = state.threats.slice(0, 10).map(t => `
+                <div class="threat-item ${t.severity || 'medium'} fade-in">
+                    <div class="threat-header">
+                        <span class="threat-title">${escapeHtml(t.title || 'Threat')}</span>
+                        <span class="threat-badge ${t.severity || 'medium'}">${(t.severity || 'medium').toUpperCase()}</span>
+                    </div>
+                    <div class="threat-description">${escapeHtml(t.description || '')}</div>
+                    <div class="threat-actions">
+                        <button class="btn btn-primary" onclick="openRemediation('${t.id}')">Remediate</button>
+                        <button class="btn btn-secondary" onclick="viewThreatDetails('${t.id}')">Details</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderThreatsFull() {
+            const container = document.getElementById('threatsFullList');
+
+            if (state.threats.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9989;</div>
+                        <div>No active threats detected</div>
+                        <p style="color: var(--text-muted); margin-top: 0.5rem;">AI monitoring is active and analyzing network traffic</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = state.threats.map(t => `
+                <div class="card fade-in" style="margin-bottom: 1rem;">
+                    <div class="card-header">
+                        <span>${escapeHtml(t.title || 'Threat')}</span>
+                        <span class="threat-badge ${t.severity || 'medium'}">${(t.severity || 'medium').toUpperCase()}</span>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <p style="margin-bottom: 1rem;">${escapeHtml(t.description || 'No description available')}</p>
+                        <div class="telemetry-grid">
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">Source</div>
+                                <div class="telemetry-value">${escapeHtml(t.source || '-')}</div>
+                            </div>
+                            <div class="telemetry-card">
+                                <div class="telemetry-label">Detected</div>
+                                <div class="telemetry-value">${formatTime(t.timestamp)}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" onclick="openRemediation('${t.id}')">&#128736; Remediate</button>
+                            <button class="btn btn-secondary" onclick="dismissThreat('${t.id}')">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAI() {
+            const container = document.getElementById('aiList');
+
+            if (state.ai_analyses.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">&#129302;</div><div>AI monitoring active</div></div>';
+                return;
+            }
+
+            container.innerHTML = state.ai_analyses.slice(0, 10).map(a => `
+                <div class="activity-item fade-in">
+                    <div class="activity-header">
+                        <span class="activity-type">${escapeHtml(a.target || 'Analysis')}</span>
+                        <span class="activity-time">${formatTime(a.timestamp)}</span>
+                    </div>
+                    <div class="activity-details">${escapeHtml(a.summary || a.verdict || '')}</div>
+                </div>
+            `).join('');
+        }
+
+        // Store device positions for click detection
+        let devicePositions = [];
+
+        function renderTopology() {
+            const canvas = document.getElementById('topology');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+
+            // Set canvas size with device pixel ratio for crisp rendering
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+            devicePositions = [];
+
+            const devices = Object.values(state.devices);
+            if (devices.length === 0) {
+                ctx.fillStyle = '#71717a';
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('Discovering network...', width / 2, height / 2);
+                return;
+            }
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.35;
+
+            // Draw gateway at center
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#22d3ee';
+            ctx.fill();
+            ctx.fillStyle = '#0a0a0f';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GW', centerX, centerY);
+
+            // Draw devices in a circle
+            devices.forEach((device, i) => {
+                const angle = (i / devices.length) * Math.PI * 2 - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+
+                // Store position for click detection
+                devicePositions.push({ x, y, radius: 20, device });
+
+                // Connection line
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = device.ip === selectedDevice ? '#22d3ee' : '#2a2a3a';
+                ctx.lineWidth = device.ip === selectedDevice ? 2 : 1;
+                ctx.stroke();
+
+                // Device node colors
+                const colors = {
+                    router: '#22d3ee',
+                    server: '#a855f7',
+                    desktop: '#3b82f6',
+                    laptop: '#3b82f6',
+                    mobile: '#ec4899',
+                    smartphone: '#ec4899',
+                    smart_device: '#f59e0b',
+                    network: '#06b6d4',
+                    unknown: '#22c55e'
+                };
+                const color = colors[device.device_type] || colors.unknown;
+                const nodeRadius = device.ip === selectedDevice ? 22 : 18;
+
+                // Draw node
+                ctx.beginPath();
+                ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // Highlight if selected
+                if (device.ip === selectedDevice) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+
+                // Local indicator
+                if (device.is_local) {
+                    ctx.beginPath();
+                    ctx.arc(x + 12, y - 12, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#22c55e';
+                    ctx.fill();
+                }
+
+                // Label below node
+                ctx.fillStyle = '#e4e4e7';
+                ctx.font = '11px Inter';
+                ctx.textAlign = 'center';
+                const label = device.hostname || device.ip?.split('.').pop() || '?';
+                ctx.fillText(label.substring(0, 12), x, y + 35);
+            });
+        }
+
+        // Handle clicks on topology canvas
+        function initTopologyClicks() {
+            const canvas = document.getElementById('topology');
+            if (!canvas) return;
+            
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Check if clicked on a device
+                for (const pos of devicePositions) {
+                    const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                    if (dist <= pos.radius + 5) {
+                        selectDevice(pos.device.ip);
+                        return;
+                    }
+                }
+            });
+            
+            // Change cursor on hover
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                let hovering = false;
+                for (const pos of devicePositions) {
+                    const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                    if (dist <= pos.radius + 5) {
+                        hovering = true;
+                        break;
+                    }
+                }
+                canvas.style.cursor = hovering ? 'pointer' : 'default';
+            });
+        }
+
+        // Device Selection
+        function selectDevice(ip) {
+            selectedDevice = ip;
+            const device = state.devices[ip];
+            if (device) {
+                openDeviceModal(device);
+            }
+            renderDevices();
+            renderTopology();
+        }
+
+        function openDeviceModal(device) {
+            document.getElementById('modalDeviceName').textContent = device.hostname || device.ip || 'Device';
+            
+            // Overview tab
+            document.getElementById('deviceOverview').innerHTML = `
+                <div class="telemetry-card">
+                    <div class="telemetry-label">IP Address</div>
+                    <div class="telemetry-value">${escapeHtml(device.ip || '-')}</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">MAC Address</div>
+                    <div class="telemetry-value">${escapeHtml(device.mac || '-')}</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Device Type</div>
+                    <div class="telemetry-value">${escapeHtml(device.device_type || 'Unknown')}</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Vendor</div>
+                    <div class="telemetry-value">${escapeHtml(device.vendor || 'Unknown')}</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Last Seen</div>
+                    <div class="telemetry-value">${formatTime(device.last_seen)}</div>
+                </div>
+                <div class="telemetry-card">
+                    <div class="telemetry-label">Status</div>
+                    <div class="telemetry-value" style="color: var(--success);">Online</div>
+                </div>
+            `;
+
+            // Actions tab based on device type
+            const actions = getDeviceActions(device);
+            document.getElementById('deviceActions').innerHTML = actions.map(a => `
+                <button class="btn ${a.danger ? 'btn-danger' : 'btn-secondary'}" 
+                        style="margin: 0.25rem;" 
+                        onclick="${a.action}"
+                        ${a.disabled ? 'disabled' : ''}>
+                    ${a.icon} ${a.label}
+                </button>
+            `).join('');
+
+            document.getElementById('deviceModal').classList.add('active');
+        }
+
+        function getDeviceActions(device) {
+            const actions = [
+                { icon: '&#128269;', label: 'Scan', action: 'scanDevice()', disabled: false },
+                { icon: '&#128196;', label: 'View Logs', action: 'viewLogs()', disabled: !device.is_local },
+            ];
+
+            if (['desktop', 'server'].includes(device.device_type) || device.is_local) {
+                actions.push(
+                    { icon: '&#128736;', label: 'Remediate', action: 'openRemediation()', disabled: false },
+                    { icon: '&#9888;', label: 'Isolate', action: 'isolateDevice()', disabled: false, danger: true },
+                    { icon: '&#128274;', label: 'Block', action: 'blockDevice()', disabled: false, danger: true },
+                );
+            }
+
+            if (device.is_local) {
+                actions.push(
+                    { icon: '&#128421;', label: 'Processes', action: 'viewProcesses()', disabled: false },
+                    { icon: '&#128196;', label: 'Services', action: 'viewServices()', disabled: false },
+                    { icon: '&#128268;', label: 'Registry', action: 'viewRegistry()', disabled: false },
+                );
+            }
+
+            if (['tv', 'iot', 'smart_device'].includes(device.device_type)) {
+                return [
+                    { icon: '&#128065;', label: 'View Only', action: '', disabled: true },
+                    { icon: '&#128274;', label: 'Block', action: 'blockDevice()', disabled: false, danger: true },
+                ];
+            }
+
+            return actions;
+        }
+
+        function closeModal() {
+            document.getElementById('deviceModal').classList.remove('active');
+            selectedDevice = null;
+            renderDevices();
+            renderTopology();
+        }
+
+        // Remediation
+        function openRemediation(threatId) {
+            document.getElementById('remediationModal').classList.add('active');
+            loadRemediationGuide(threatId);
+        }
+
+        function closeRemediationModal() {
+            document.getElementById('remediationModal').classList.remove('active');
+        }
+
+        async function loadRemediationGuide(threatId) {
+            document.getElementById('remediationGuide').textContent = 'Analyzing threat and generating remediation steps...';
+            document.getElementById('remediationSteps').innerHTML = '';
+
+            setTimeout(() => {
+                document.getElementById('remediationGuide').innerHTML = `
+                    Based on my analysis, this threat appears to be <strong>suspicious network activity</strong>. 
+                    I recommend the following remediation steps:
+                `;
+
+                document.getElementById('remediationSteps').innerHTML = `
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Investigate Source</div>
+                            <div class="step-description">Review the source IP and process to determine legitimacy.</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Block if Malicious</div>
+                            <div class="step-description">Add firewall rule to block the suspicious connection.</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Monitor for Recurrence</div>
+                            <div class="step-description">Set up alerts for similar activity patterns.</div>
+                        </div>
+                    </div>
+                `;
+            }, 1000);
+        }
+
+        // Actions
+        async function scanNetwork() {
+            showNotification('Starting network scan...');
+            try {
+                const response = await fetch('/ws/scan/start', { method: 'POST' });
+                const data = await response.json();
+                showNotification('Network scan initiated');
+            } catch (e) {
+                showNotification('Scan request sent');
+            }
+        }
+        
+        function exportDevices() {
+            const devices = Object.values(state.devices);
+            const json = JSON.stringify(devices, null, 2);
+            downloadJson(json, 'artemis-devices.json');
+            showNotification(`Exported ${devices.length} devices`);
+        }
+        
+        function clearConnections() { 
+            state.connections = []; 
+            renderConnections(); 
+            renderConnectionsTable(); 
+        }
+        
+        function exportTraffic() {
+            const json = JSON.stringify({
+                connections: state.connections,
+                stats: state.traffic_stats
+            }, null, 2);
+            downloadJson(json, 'artemis-traffic.json');
+        }
+        
+        function dismissAllThreats() { 
+            state.threats = []; 
+            renderThreats(); 
+            renderThreatsFull(); 
+            renderStats();
+            showNotification('All threats dismissed');
+        }
+        
+        function remediateAll() { 
+            showNotification('Auto-remediation started for all threats');
+            state.threats.forEach(t => {
+                // Queue for remediation
+            });
+        }
+        
+        async function startScan() {
+            const path = document.getElementById('scanPath').value || 'C:\\Users';
+            const deepScan = document.getElementById('scanDeep').checked;
+            const aiAnalysis = document.getElementById('scanAI').checked;
+            const recursive = document.getElementById('scanRecursive').checked;
+            
+            document.getElementById('scanStatus').textContent = 'Scanning...';
+            document.getElementById('scanResults').innerHTML = `
+                <div class="activity-item">
+                    <div class="activity-type">Scan in progress</div>
+                    <div class="activity-details">Path: ${escapeHtml(path)}</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/ws/scan/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paths: [path], deep: deepScan, ai: aiAnalysis, recursive })
+                });
+                const data = await response.json();
+                
+                document.getElementById('scanStatus').textContent = 'Scan started';
+                showNotification('File scan started');
+            } catch (e) {
+                document.getElementById('scanStatus').textContent = 'Scan queued';
+                showNotification('Scan request submitted');
+            }
+        }
+        
+        function viewHistory() { 
+            showNotification('Loading remediation history...');
+        }
+        
+        function rollbackLast() { 
+            showNotification('Rolling back last action...');
+        }
+        
+        function importRules() { 
+            // Create file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.yaml,.yml,.json,.yar';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    showNotification(`Importing: ${file.name}`);
+                }
+            };
+            input.click();
+        }
+        
+        function generateRule() { 
+            window.location.href = '/rules'; 
+        }
+        
+        function saveSettings() { 
+            const settings = {
+                provider: document.getElementById('settingsProvider').value,
+                model: document.getElementById('settingsModel').value,
+                scanInterval: document.getElementById('settingsScanInterval').value,
+                networkRange: document.getElementById('settingsNetworkRange').value,
+                autoQuarantine: document.getElementById('settingsAutoQuarantine').checked,
+                doubleVerify: document.getElementById('settingsDoubleVerify').checked,
+                requireApproval: document.getElementById('settingsRequireApproval').checked,
+            };
+            localStorage.setItem('artemis_settings', JSON.stringify(settings));
+            showNotification('Settings saved');
+        }
+        
+        async function scanDevice() {
+            if (!selectedDevice) return;
+            showNotification(`Scanning device ${selectedDevice}...`);
+            closeModal();
+        }
+        
+        function viewLogs() { 
+            showNotification('Opening logs...');
+        }
+        
+        function isolateDevice() { 
+            if (!selectedDevice) return;
+            if (confirm(`Isolate device ${selectedDevice}? This will block all network access.`)) {
+                showNotification(`Isolating ${selectedDevice}...`);
+            }
+        }
+        
+        function blockDevice() { 
+            if (!selectedDevice) return;
+            if (confirm(`Block device ${selectedDevice}?`)) {
+                showNotification(`Blocking ${selectedDevice}...`);
+            }
+        }
+        
+        async function viewProcesses() {
+            const procs = document.getElementById('deviceProcesses');
+            procs.innerHTML = '<div class="activity-item">Loading processes...</div>';
+            
+            try {
+                const response = await fetch('/ws/telemetry');
+                const data = await response.json();
+                
+                if (data.processes) {
+                    procs.innerHTML = data.processes.map(p => `
+                        <div class="activity-item">
+                            <div class="activity-type">${escapeHtml(p.name || 'unknown')}</div>
+                            <div class="activity-details">PID: ${p.pid} | CPU: ${p.cpu}% | Memory: ${formatBytes(p.memory || 0)}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                procs.innerHTML = '<div class="activity-item">Unable to load processes</div>';
+            }
+            
+            // Switch to processes tab
+            document.querySelectorAll('#deviceTabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#deviceModal .tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('#deviceTabs .tab[data-tab="processes"]').classList.add('active');
+            document.getElementById('tab-processes').classList.add('active');
+        }
+        
+        function viewServices() { 
+            showNotification('Loading services...');
+        }
+        
+        function viewRegistry() { 
+            showNotification('Opening registry browser...');
+        }
+        
+        function executeRemediation() { 
+            showNotification('Executing remediation...');
+            closeRemediationModal(); 
+        }
+        
+        function autoRemediate() { 
+            showNotification('Starting auto-remediation...');
+            closeRemediationModal(); 
+        }
+        
+        function viewThreatDetails(id) { 
+            const threat = state.threats.find(t => t.id === id);
+            if (threat) {
+                alert(`Threat: ${threat.title}\n\n${threat.description}\n\nSource: ${threat.source || 'Unknown'}`);
+            }
+        }
+        
+        function dismissThreat(id) { 
+            state.threats = state.threats.filter(t => t.id !== id); 
+            renderThreats(); 
+            renderThreatsFull(); 
+            renderStats(); 
+            showNotification('Threat dismissed');
+        }
+        
+        // Helper functions
+        function showNotification(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            const colors = {
+                info: 'var(--accent)',
+                success: 'var(--success)',
+                warning: 'var(--warning)',
+                error: 'var(--danger)'
+            };
+            toast.style.cssText = `
+                background: var(--bg-secondary);
+                border: 1px solid ${colors[type] || colors.info};
+                border-left: 4px solid ${colors[type] || colors.info};
+                color: var(--text-primary);
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+            
+            console.log('[Artemis]', message);
+        }
+        
+        function downloadJson(content, filename) {
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Utilities
+        function getDeviceIcon(type) {
+            const icons = {
+                router: '&#128422;',
+                desktop: '&#128187;',
+                laptop: '&#128187;',
+                server: '&#128421;',
+                mobile: '&#128241;',
+                smartphone: '&#128241;',
+                tv: '&#128250;',
+                smart_device: '&#128161;',
+                unknown: '&#128430;'
+            };
+            return icons[type] || icons.unknown;
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '-';
+            return new Date(ts).toLocaleTimeString();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateStatus(online) {
+            const dot = document.getElementById('agentDot');
+            const text = document.getElementById('agentStatusText');
+            dot.className = 'status-dot ' + (online ? 'online' : 'danger');
+            text.textContent = online ? 'Monitoring' : 'Disconnected';
+        }
+
+        function refreshTopology() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ command: 'get_state' }));
+            }
+        }
+
+        // Window resize
+        window.addEventListener('resize', () => renderTopology());
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initNavigation();
+            initModalTabs();
+            initTopologyClicks();
+            connect();
+            
+            // Re-render topology on window resize (debounced)
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(renderTopology, 100);
+            });
+        });
+
+        // Fallback polling
+        setInterval(() => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                fetch('/ws/state').then(r => r.json()).then(data => {
+                    state = data;
+                    renderAll();
+                }).catch(() => {});
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

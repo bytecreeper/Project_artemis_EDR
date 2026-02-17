@@ -10,12 +10,26 @@ class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
     
     @abstractmethod
-    async def generate(self, prompt: str, system: Optional[str] = None) -> tuple[str, dict]:
+    async def generate(
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> str:
         """
         Generate a response from the LLM.
         
+        Args:
+            prompt: The user prompt
+            system: System prompt
+            model: Model override
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
+        
         Returns:
-            Tuple of (response_text, metadata_dict)
+            Generated text
         """
         pass
     
@@ -49,22 +63,22 @@ class AnthropicProvider(LLMProvider):
                 raise ImportError("Install anthropic: pip install anthropic")
         return self._client
     
-    async def generate(self, prompt: str, system: Optional[str] = None) -> tuple[str, dict]:
+    async def generate(
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> str:
         response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=4096,
+            model=model or self.model,
+            max_tokens=max_tokens,
+            temperature=temperature,
             system=system or "You are a security detection engineering expert.",
             messages=[{"role": "user", "content": prompt}],
         )
-        
-        text = response.content[0].text
-        metadata = {
-            "model": self.model,
-            "input_tokens": response.usage.input_tokens,
-            "output_tokens": response.usage.output_tokens,
-            "stop_reason": response.stop_reason,
-        }
-        return text, metadata
+        return response.content[0].text
     
     def get_model_name(self) -> str:
         return f"anthropic/{self.model}"
@@ -94,26 +108,26 @@ class OpenAIProvider(LLMProvider):
                 raise ImportError("Install openai: pip install openai")
         return self._client
     
-    async def generate(self, prompt: str, system: Optional[str] = None) -> tuple[str, dict]:
+    async def generate(
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> str:
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
         
         response = await self.client.chat.completions.create(
-            model=self.model,
+            model=model or self.model,
             messages=messages,
-            max_tokens=4096,
+            max_tokens=max_tokens,
+            temperature=temperature,
         )
-        
-        text = response.choices[0].message.content
-        metadata = {
-            "model": self.model,
-            "input_tokens": response.usage.prompt_tokens,
-            "output_tokens": response.usage.completion_tokens,
-            "finish_reason": response.choices[0].finish_reason,
-        }
-        return text, metadata
+        return response.choices[0].message.content
     
     def get_model_name(self) -> str:
         return f"openai/{self.model}"
@@ -125,11 +139,11 @@ class OllamaProvider(LLMProvider):
     def __init__(
         self,
         model: str = "llama3.1",
-        base_url: str = "http://localhost:11434",
+        base_url: Optional[str] = None,
         timeout: int = 600,  # 10 minutes for large reasoning models
     ):
         self.model = model
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or "http://localhost:11434").rstrip("/")
         self.timeout = timeout
     
     def _strip_reasoning_tags(self, text: str) -> str:
@@ -139,13 +153,24 @@ class OllamaProvider(LLMProvider):
         cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
         return cleaned.strip()
     
-    async def generate(self, prompt: str, system: Optional[str] = None) -> tuple[str, dict]:
+    async def generate(
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> str:
         import httpx
         
         payload = {
-            "model": self.model,
+            "model": model or self.model,
             "prompt": prompt,
             "stream": False,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+            },
         }
         if system:
             payload["system"] = system
@@ -160,15 +185,7 @@ class OllamaProvider(LLMProvider):
         
         raw_text = data.get("response", "")
         # Strip reasoning tags for R1/reasoning models
-        text = self._strip_reasoning_tags(raw_text)
-        
-        metadata = {
-            "model": self.model,
-            "eval_count": data.get("eval_count"),
-            "eval_duration": data.get("eval_duration"),
-            "had_reasoning": raw_text != text,  # Track if reasoning was stripped
-        }
-        return text, metadata
+        return self._strip_reasoning_tags(raw_text)
     
     def get_model_name(self) -> str:
         return f"ollama/{self.model}"

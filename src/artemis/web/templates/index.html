@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemis | Detection Engineering</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">A</div>
+                    <span>ARTEMIS</span>
+                </div>
+            </div>
+
+            <button class="new-task-btn" onclick="focusDescription()">
+                New Rule
+                <span class="plus">+</span>
+            </button>
+
+            <nav class="nav-section">
+                <a class="nav-item active">
+                    <span class="icon">⚡</span>
+                    Generate
+                </a>
+                <a class="nav-item">
+                    <span class="icon">📋</span>
+                    Rules Library
+                </a>
+                <a class="nav-item">
+                    <span class="icon">✓</span>
+                    Validation
+                </a>
+                <a class="nav-item">
+                    <span class="icon">📊</span>
+                    Analytics
+                </a>
+                <a class="nav-item">
+                    <span class="icon">⚙️</span>
+                    Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">BC</div>
+                    <div class="user-details">
+                        <div class="user-name">ByteCreeper</div>
+                        <div class="user-role">Detection Engineer</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <div class="breadcrumb">Generate / <span>New Rule</span></div>
+                    <h1 class="page-title">Detection Rule Generator</h1>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Formats Available</div>
+                    <div class="stat-value">5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">LLM Providers</div>
+                    <div class="stat-value">3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Rules Generated</div>
+                    <div class="stat-value orange" id="rulesGenerated">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value">100%</div>
+                </div>
+            </div>
+
+            <!-- Generate Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>⚡</span> Generate Detection Rule
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Threat Description</label>
+                        <textarea id="description" placeholder="Describe the threat you want to detect...&#10;&#10;Example: Detect PowerShell downloading files using Invoke-WebRequest or WebClient"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Output Format</label>
+                            <select id="format">
+                                <option value="sigma">Sigma</option>
+                                <option value="yara">YARA</option>
+                                <option value="splunk">Splunk SPL</option>
+                                <option value="kql">KQL (Microsoft)</option>
+                                <option value="snort">Snort/Suricata</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">LLM Provider</label>
+                            <select id="provider" onchange="updateModels()">
+                                <option value="ollama">Ollama (Local)</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="openai">OpenAI</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model">
+                                <option value="qwen3:14b">qwen3:14b</option>
+                                <option value="qwen3:32b">qwen3:32b</option>
+                                <option value="deepseek-r1:70b">deepseek-r1:70b</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Severity</label>
+                            <select id="severity">
+                                <option value="">Auto-detect</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+                        <div class="form-group">
+                            <label class="form-label">Additional Context</label>
+                            <input type="text" id="context" placeholder="e.g., Windows endpoint with Sysmon">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Indicators (comma-separated)</label>
+                            <input type="text" id="indicators" placeholder="e.g., evil.com, 192.168.1.100">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="generateBtn" onclick="generateRule()">
+                        <span class="btn-text">Generate Rule</span>
+                        <span class="btn-loading loading-text" style="display: none;">Generating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Card -->
+            <div class="card hidden" id="outputSection">
+                <div class="card-header">
+                    <div class="output-header" style="width: 100%;">
+                        <span class="output-title" id="ruleName">Generated Rule</span>
+                        <div class="badge-group">
+                            <span class="badge badge-format" id="formatBadge">SIGMA</span>
+                            <span class="badge badge-severity" id="severityBadge">MEDIUM</span>
+                            <span class="badge badge-valid" id="validBadge">VALID</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-item">
+                            <strong>Model:</strong> <span class="info-value" id="modelUsed">-</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Time:</strong> <span class="info-value" id="genTime">-</span>
+                        </div>
+                        <div class="info-item" id="mitreContainer" style="display: none;">
+                            <strong>MITRE:</strong> <span class="info-value" id="mitreMapping">-</span>
+                        </div>
+                    </div>
+
+                    <div class="validation-errors hidden" id="validationErrors">
+                        <h4>Validation Issues</h4>
+                        <ul id="errorsList"></ul>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang" id="codeLang">yaml</span>
+                            <button class="copy-btn" onclick="copyRule()">Copy</button>
+                        </div>
+                        <pre><code id="ruleContent"></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Card -->
+            <div class="card error-card hidden" id="errorSection">
+                <div class="card-body">
+                    <h3>Generation Failed</h3>
+                    <p id="errorMessage"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

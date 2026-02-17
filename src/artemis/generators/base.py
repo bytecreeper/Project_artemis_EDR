@@ -69,7 +69,7 @@ class BaseGenerator(ABC):
             generation_prompt = self.get_generation_prompt(threat)
             
             # Call LLM
-            response_text, metadata = await self.llm.generate(
+            response_text = await self.llm.generate(
                 prompt=generation_prompt,
                 system=system_prompt,
             )
@@ -88,7 +88,7 @@ class BaseGenerator(ABC):
                 success=True,
                 rule=rule,
                 model_used=self.llm.get_model_name(),
-                tokens_used=metadata.get("input_tokens", 0) + metadata.get("output_tokens", 0),
+                tokens_used=0,  # Token counting moved to provider internals
                 generation_time_ms=elapsed_ms,
             )
             
