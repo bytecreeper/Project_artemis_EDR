@@ -907,15 +907,18 @@
                                 </div>
                             </div>
 
-                            <div class="card" style="max-height: 180px;">
+                            <div class="card" style="max-height: 200px;">
                                 <div class="card-header">
-                                    <span>AI Analysis Feed</span>
-                                    <span class="live-badge"><span class="live-dot"></span></span>
+                                    <span>🤖 AI Analysis</span>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <button class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="runManualAIAnalysis()">Analyze Now</button>
+                                        <span class="live-badge"><span class="live-dot"></span></span>
+                                    </div>
                                 </div>
-                                <div class="card-body" id="aiList">
+                                <div class="card-body" id="aiList" style="overflow-y: auto;">
                                     <div class="empty-state">
-                                        <div class="empty-icon">[AI]</div>
-                                        <div>AI monitoring active</div>
+                                        <div class="empty-icon">🤖</div>
+                                        <div>Click "Analyze Now" or wait for auto-analysis</div>
                                     </div>
                                 </div>
                             </div>
@@ -1462,26 +1465,53 @@
             if (data.analyses !== undefined) document.getElementById('statAnalyses').textContent = data.analyses;
         }
 
+        // Device type icons
+        const deviceIcons = {
+            'router': '📡',
+            'desktop': '🖥️',
+            'server': '🖥️',
+            'mobile': '📱',
+            'phone': '📱',
+            'tablet': '📱',
+            'smart_tv': '📺',
+            'streaming_device': '📺',
+            'smart_speaker': '🔊',
+            'gaming_console': '🎮',
+            'printer': '🖨️',
+            'camera': '📷',
+            'iot_device': '💡',
+            'apple_device': '🍎',
+            'google_device': '🔵',
+            'amazon_device': '📦',
+            'network_device': '🔌',
+            'unknown': '❓'
+        };
+        
+        function getDeviceIcon(type) {
+            return deviceIcons[type] || deviceIcons['unknown'];
+        }
+        
         function updateDevicesList() {
             const container = document.getElementById('devicesList');
             const countBadge = document.getElementById('deviceCountBadge');
             countBadge.textContent = state.devices.length;
             
             if (state.devices.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">[...]</div><div>Scanning network...</div></div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div>Scanning network...</div></div>';
                 return;
             }
             
             container.innerHTML = state.devices.map(device => `
                 <div class="device-item" onclick="selectDevice('${device.ip}')">
                     <div class="device-header">
+                        <span class="device-icon">${getDeviceIcon(device.type)}</span>
                         <span class="device-name">${device.hostname || device.ip}</span>
                         <span class="device-type-badge ${device.type || ''}">${device.type || 'unknown'}</span>
                     </div>
                     <div class="device-ip">${device.ip}</div>
                     <div class="device-stats">
                         <span>${device.mac || '-'}</span>
-                        <span>${device.vendor || ''}</span>
+                        <span style="color: var(--text-secondary);">${device.vendor || ''}</span>
                     </div>
                 </div>
             `).join('');
@@ -2135,56 +2165,173 @@
             setInterval(runAutoAIAnalysis, 60000);
         });
         
-        // ========== AUTO AI ANALYSIS ==========
+        // ========== AUTO AI ANALYSIS (DeepSeek) ==========
+        let aiAnalysisRunning = false;
+        let lastAIAnalysisTime = 0;
+        
         async function runAutoAIAnalysis() {
-            // Only run if we have connections and devices
-            if (state.connections.length === 0 && state.devices.length === 0) {
+            // Throttle: only run every 60 seconds
+            const now = Date.now();
+            if (now - lastAIAnalysisTime < 60000 || aiAnalysisRunning) {
                 return;
             }
             
+            // Only run if we have data to analyze
+            if (state.connections.length === 0 && state.devices.length === 0 && state.threats.length === 0) {
+                return;
+            }
+            
+            aiAnalysisRunning = true;
+            lastAIAnalysisTime = now;
+            
             try {
-                // Analyze unusual connection patterns
+                // Prepare context for AI
                 const suspiciousConns = state.connections.filter(conn => {
-                    // Check for unusual ports
                     const remote = conn.remote || '';
-                    const port = remote.split(':').pop();
-                    const suspiciousPorts = ['4444', '5555', '6666', '1337', '31337', '8888', '9999'];
-                    return suspiciousPorts.includes(port);
+                    const port = parseInt(remote.split(':').pop()) || 0;
+                    return [4444, 5555, 6666, 1337, 31337, 8888, 9999, 6667].includes(port);
                 });
                 
-                if (suspiciousConns.length > 0) {
-                    // Add to AI analysis feed
-                    const aiList = document.getElementById('aiList');
-                    const analysisHtml = `
-                        <div class="ai-panel" style="margin: 0.375rem;">
-                            <div class="ai-header">Suspicious Connection Detected</div>
-                            <div class="ai-response">Found ${suspiciousConns.length} connection(s) to unusual ports. Processes: ${suspiciousConns.map(c => c.process || 'unknown').join(', ')}</div>
-                        </div>
-                    `;
+                const payload = {
+                    connections: suspiciousConns.slice(0, 10),
+                    threats: state.threats.slice(0, 5),
+                    devices: state.devices.slice(0, 20),
+                    model: "qwen3:14b"  // Fast model for periodic analysis
+                };
+                
+                // Only call AI if there's something interesting
+                if (suspiciousConns.length > 0 || state.threats.length > 0) {
+                    const resp = await fetch('/api/ai/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
                     
-                    if (aiList.querySelector('.empty-state')) {
-                        aiList.innerHTML = '';
+                    const data = await resp.json();
+                    
+                    if (data.success) {
+                        addAIAnalysis(data);
                     }
-                    aiList.insertAdjacentHTML('afterbegin', analysisHtml);
-                    
-                    document.getElementById('statAnalyses').textContent = parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
-                }
-                
-                // Check for new devices (potential rogue devices)
-                const recentDevices = state.devices.filter(d => {
-                    // Devices seen in last 5 minutes
-                    const lastSeen = new Date(d.last_seen);
-                    const now = new Date();
-                    return (now - lastSeen) < 5 * 60 * 1000;
-                });
-                
-                if (recentDevices.length > 5) {
-                    // Many new devices - possible network scan
-                    console.log('AI Analysis: Multiple new devices detected');
+                } else {
+                    // Quick heuristic check without AI call
+                    checkHeuristicThreats();
                 }
                 
             } catch (e) {
                 console.error('AI analysis error:', e);
+            } finally {
+                aiAnalysisRunning = false;
+            }
+        }
+        
+        function addAIAnalysis(data) {
+            const aiList = document.getElementById('aiList');
+            
+            // Remove empty state
+            if (aiList.querySelector('.empty-state')) {
+                aiList.innerHTML = '';
+            }
+            
+            // Determine color based on risk level
+            const riskColor = data.risk_level >= 7 ? 'var(--danger)' : 
+                             data.risk_level >= 4 ? 'var(--warning)' : 'var(--success)';
+            
+            const analysisHtml = `
+                <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid ${riskColor};">
+                    <div class="ai-header" style="display: flex; justify-content: space-between;">
+                        <span>🤖 AI Security Analysis</span>
+                        <span style="color: ${riskColor}; font-weight: bold;">Risk: ${data.risk_level}/10</span>
+                    </div>
+                    <div class="ai-response" style="white-space: pre-wrap; font-size: 0.8rem; max-height: 150px; overflow-y: auto;">
+${escapeHtml(data.analysis || 'No analysis available')}
+                    </div>
+                    ${data.recommendations && data.recommendations.length > 0 ? `
+                    <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+                        <strong style="font-size: 0.75rem;">Recommendations:</strong>
+                        <ul style="margin: 0.25rem 0; padding-left: 1.25rem; font-size: 0.75rem;">
+                            ${data.recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ` : ''}
+                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        ${new Date().toLocaleTimeString()}
+                    </div>
+                </div>
+            `;
+            
+            aiList.insertAdjacentHTML('afterbegin', analysisHtml);
+            
+            // Keep only last 5 analyses
+            while (aiList.children.length > 5) {
+                aiList.removeChild(aiList.lastChild);
+            }
+            
+            // Update stat
+            document.getElementById('statAnalyses').textContent = 
+                parseInt(document.getElementById('statAnalyses').textContent || 0) + 1;
+        }
+        
+        function checkHeuristicThreats() {
+            // Quick local checks without AI
+            const suspiciousConns = state.connections.filter(conn => {
+                const remote = conn.remote || '';
+                const port = parseInt(remote.split(':').pop()) || 0;
+                return [4444, 5555, 6666, 1337, 31337].includes(port);
+            });
+            
+            if (suspiciousConns.length > 0) {
+                const aiList = document.getElementById('aiList');
+                if (aiList.querySelector('.empty-state')) {
+                    aiList.innerHTML = '';
+                }
+                
+                const html = `
+                    <div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--warning);">
+                        <div class="ai-header">⚠️ Suspicious Connection</div>
+                        <div class="ai-response" style="font-size: 0.8rem;">
+                            Found ${suspiciousConns.length} connection(s) to unusual ports.
+                            <br>Processes: ${suspiciousConns.map(c => c.process || 'unknown').join(', ')}
+                        </div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted);">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                `;
+                aiList.insertAdjacentHTML('afterbegin', html);
+            }
+        }
+        
+        // Manual AI analysis button
+        async function runManualAIAnalysis() {
+            const aiList = document.getElementById('aiList');
+            aiList.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);">🤖 Analyzing with DeepSeek...</div>';
+            
+            try {
+                const resp = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        connections: state.connections.slice(0, 20),
+                        threats: state.threats,
+                        devices: state.devices,
+                        model: "deepseek-r1:70b"  // Full model for manual analysis
+                    })
+                });
+                
+                const data = await resp.json();
+                aiList.innerHTML = '';
+                
+                if (data.success) {
+                    addAIAnalysis(data);
+                } else {
+                    aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem; border-left: 3px solid var(--danger);">
+                        <div class="ai-header">❌ Analysis Failed</div>
+                        <div class="ai-response">${escapeHtml(data.error || 'Unknown error')}</div>
+                    </div>`;
+                }
+            } catch (e) {
+                aiList.innerHTML = `<div class="ai-panel" style="margin: 0.375rem;">
+                    <div class="ai-header">❌ Error</div>
+                    <div class="ai-response">${escapeHtml(e.message)}</div>
+                </div>`;
             }
         }
         
