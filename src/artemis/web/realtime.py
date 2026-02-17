@@ -168,6 +168,27 @@ class SecurityState:
             "data": self.agent_status,
         })
     
+    async def update_pentest_state(self, pentest_state: dict):
+        """Update pentest state and broadcast to clients."""
+        async with self._lock:
+            self.pentest_state = pentest_state
+        await manager.broadcast({
+            "type": "pentest_update",
+            "data": pentest_state,
+        })
+    
+    async def add_pentest_vulnerability(self, vuln: dict):
+        """Add a discovered vulnerability."""
+        async with self._lock:
+            if not hasattr(self, 'pentest_vulnerabilities'):
+                self.pentest_vulnerabilities = []
+            vuln["timestamp"] = datetime.now(timezone.utc).isoformat()
+            self.pentest_vulnerabilities.append(vuln)
+        await manager.broadcast({
+            "type": "pentest_vulnerability",
+            "data": vuln,
+        })
+    
     def get_full_state(self) -> dict:
         """Get complete state snapshot."""
         return {
@@ -178,6 +199,8 @@ class SecurityState:
             "traffic_stats": self.traffic_stats,
             "network_topology": self.network_topology,
             "agent_status": self.agent_status,
+            "pentest_state": getattr(self, 'pentest_state', None),
+            "pentest_vulnerabilities": getattr(self, 'pentest_vulnerabilities', []),
         }
 
 

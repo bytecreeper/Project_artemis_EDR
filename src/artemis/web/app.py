@@ -227,10 +227,207 @@ async def validate_rule(req: ValidateRequest):
         return ValidateResponse(is_valid=False, errors=[str(e)])
 
 
+# ============================================================================
+# Pentest API Endpoints
+# ============================================================================
+
+class PentestStartRequest(BaseModel):
+    """Request to start a pentest."""
+    target_url: str
+    repo_path: Optional[str] = None
+    model: str = "deepseek-r1:70b"
+    provider: str = "ollama"
+    login_url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    parallel: bool = True
+
+
+class PentestStatusResponse(BaseModel):
+    """Pentest status response."""
+    running: bool
+    status: str
+    current_agent: Optional[str] = None
+    progress_percent: float = 0.0
+    current_task: str = ""
+    completed_agents: list[str] = []
+    vulnerability_count: int = 0
+    start_time: Optional[str] = None
+    elapsed_seconds: Optional[float] = None
+
+
+class VulnerabilityResponse(BaseModel):
+    """Vulnerability finding."""
+    id: str
+    title: str
+    type: str
+    severity: str
+    endpoint: Optional[str] = None
+    parameter: Optional[str] = None
+    description: str = ""
+    exploited: bool = False
+
+
+# Global pentest state
+_pentest_pipeline = None
+_pentest_task = None
+
+
+@app.post("/api/pentest/start")
+async def start_pentest(req: PentestStartRequest):
+    """Start a new penetration test."""
+    global _pentest_pipeline, _pentest_task
+    
+    if _pentest_pipeline is not None and _pentest_task is not None:
+        if not _pentest_task.done():
+            raise HTTPException(status_code=409, detail="Pentest already running")
+    
+    from artemis.pentest import PentestPipeline, PentestConfig
+    
+    # Build config
+    credentials = None
+    if req.username and req.password:
+        credentials = {"username": req.username, "password": req.password}
+    
+    config = PentestConfig(
+        target_url=req.target_url,
+        repo_path=req.repo_path,
+        provider=req.provider,
+        model=req.model,
+        login_url=req.login_url,
+        credentials=credentials,
+        parallel_agents=req.parallel,
+    )
+    
+    # Progress callback that updates WebSocket state
+    def on_progress(state):
+        asyncio.create_task(security_state.update_pentest_state(state.to_dict()))
+    
+    _pentest_pipeline = PentestPipeline(config, on_progress=on_progress)
+    
+    # Start in background
+    _pentest_task = asyncio.create_task(_pentest_pipeline.run())
+    
+    return {
+        "success": True,
+        "message": "Pentest started",
+        "target": req.target_url,
+        "output_dir": config.output_dir,
+    }
+
+
+@app.post("/api/pentest/cancel")
+async def cancel_pentest():
+    """Cancel the running pentest."""
+    global _pentest_pipeline
+    
+    if _pentest_pipeline is None:
+        raise HTTPException(status_code=404, detail="No pentest running")
+    
+    _pentest_pipeline.cancel()
+    return {"success": True, "message": "Pentest cancellation requested"}
+
+
+@app.get("/api/pentest/status", response_model=PentestStatusResponse)
+async def get_pentest_status():
+    """Get current pentest status."""
+    global _pentest_pipeline, _pentest_task
+    
+    if _pentest_pipeline is None:
+        return PentestStatusResponse(running=False, status="idle")
+    
+    state = _pentest_pipeline.state
+    running = _pentest_task is not None and not _pentest_task.done()
+    
+    elapsed = None
+    if state.start_time:
+        from datetime import datetime, timezone
+        elapsed = (datetime.now(timezone.utc) - state.start_time).total_seconds()
+    
+    return PentestStatusResponse(
+        running=running,
+        status=state.status.value,
+        current_agent=state.current_agent,
+        progress_percent=state.progress_percent,
+        current_task=state.current_task,
+        completed_agents=state.completed_agents,
+        vulnerability_count=len(state.vulnerabilities),
+        start_time=state.start_time.isoformat() if state.start_time else None,
+        elapsed_seconds=elapsed,
+    )
+
+
+@app.get("/api/pentest/vulnerabilities")
+async def get_pentest_vulnerabilities():
+    """Get discovered vulnerabilities."""
+    global _pentest_pipeline
+    
+    if _pentest_pipeline is None:
+        return {"vulnerabilities": []}
+    
+    return {
+        "vulnerabilities": [
+            {
+                "id": v.get("id", f"vuln-{i}"),
+                "title": v.get("title", "Unknown"),
+                "type": v.get("type", "unknown"),
+                "severity": v.get("severity", "medium"),
+                "endpoint": v.get("endpoint"),
+                "parameter": v.get("parameter"),
+                "description": v.get("description", ""),
+                "exploited": v.get("exploited", False),
+                "payload": v.get("payload"),
+                "proof": v.get("exploit_proof"),
+            }
+            for i, v in enumerate(_pentest_pipeline.state.vulnerabilities)
+        ]
+    }
+
+
+@app.get("/api/pentest/report")
+async def get_pentest_report():
+    """Get the pentest report content."""
+    global _pentest_pipeline
+    
+    if _pentest_pipeline is None:
+        raise HTTPException(status_code=404, detail="No pentest data")
+    
+    report_path = _pentest_pipeline.deliverables_dir / "pentest_report.md"
+    
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail="Report not yet generated")
+    
+    return {
+        "content": report_path.read_text(),
+        "html_path": str(_pentest_pipeline.deliverables_dir / "pentest_report.html"),
+    }
+
+
+@app.get("/api/pentest/sessions")
+async def list_pentest_sessions():
+    """List all pentest sessions."""
+    from pathlib import Path
+    import json
+    
+    sessions = []
+    audit_dir = Path("./audit-logs")
+    
+    if audit_dir.exists():
+        for session_file in audit_dir.rglob("session.json"):
+            try:
+                data = json.loads(session_file.read_text())
+                data["path"] = str(session_file.parent)
+                sessions.append(data)
+            except Exception:
+                pass
+    
+    return {"sessions": sessions}
+
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "version": "0.5.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):

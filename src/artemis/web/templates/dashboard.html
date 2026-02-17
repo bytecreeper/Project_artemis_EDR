@@ -782,6 +782,10 @@
                     <span class="nav-icon">&#128736;</span>
                     <span>Remediation</span>
                 </div>
+                <div class="nav-item" data-view="pentest">
+                    <span class="nav-icon">&#128272;</span>
+                    <span>Pentest</span>
+                </div>
                 <div class="nav-item" data-view="rules">
                     <span class="nav-icon">&#128203;</span>
                     <span>Rules</span>
@@ -1050,6 +1054,83 @@
                     </div>
                 </div>
 
+                <!-- Pentest View -->
+                <div class="view" id="view-pentest">
+                    <div class="view-header">
+                        <h2 class="view-title">Penetration Testing</h2>
+                        <div class="view-actions">
+                            <button class="btn btn-secondary" onclick="viewPentestHistory()">&#128203; History</button>
+                            <button class="btn btn-primary" onclick="showPentestModal()">&#128272; New Pentest</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Pentest Status Panel -->
+                    <div class="card" style="margin-bottom: 1rem;" id="pentestStatusCard">
+                        <div class="card-header">
+                            <span>&#9881; Pentest Status</span>
+                            <span class="status-badge" id="pentestStatusBadge">
+                                <span class="status-dot"></span>
+                                <span id="pentestStatusText">Idle</span>
+                            </span>
+                        </div>
+                        <div class="card-body" style="padding: 1rem;">
+                            <div id="pentestIdleState">
+                                <div class="empty-state">
+                                    <div class="empty-icon">&#128272;</div>
+                                    <div>No pentest running</div>
+                                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Start a new penetration test to analyze a target</p>
+                                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="showPentestModal()">Start Pentest</button>
+                                </div>
+                            </div>
+                            <div id="pentestRunningState" style="display: none;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                    <div class="stat-card">
+                                        <div class="stat-label">Target</div>
+                                        <div class="stat-value" id="pentestTarget" style="font-size: 0.9rem;">-</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-label">Progress</div>
+                                        <div class="stat-value accent" id="pentestProgress">0%</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-label">Vulnerabilities</div>
+                                        <div class="stat-value danger" id="pentestVulnCount">0</div>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span id="pentestCurrentAgent">Starting...</span>
+                                        <span id="pentestCurrentTask" style="color: var(--text-muted);"></span>
+                                    </div>
+                                    <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                                        <div id="pentestProgressBar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); width: 0%; transition: width 0.3s;"></div>
+                                    </div>
+                                </div>
+                                <div id="pentestAgentList" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    <!-- Agent status badges will be inserted here -->
+                                </div>
+                                <div style="margin-top: 1rem; text-align: right;">
+                                    <button class="btn btn-danger" onclick="cancelPentest()">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vulnerabilities Found -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span>&#9888; Vulnerabilities Found</span>
+                            <span id="pentestVulnBadge" style="background: var(--danger); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem;">0</span>
+                        </div>
+                        <div class="card-body" id="pentestVulnList" style="min-height: 200px;">
+                            <div class="empty-state">
+                                <div class="empty-icon">&#9989;</div>
+                                <div>No vulnerabilities found yet</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Rules View -->
                 <div class="view" id="view-rules">
                     <div class="view-header">
@@ -1211,6 +1292,73 @@
         </div>
     </div>
 
+    <!-- Pentest Modal -->
+    <div class="modal-overlay" id="pentestModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">&#128272; Start Penetration Test</h2>
+                <button class="modal-close" onclick="closePentestModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Target URL *</label>
+                    <input type="text" class="form-input" id="pentestTargetUrl" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source Code Path (optional, for whitebox)</label>
+                    <input type="text" class="form-input" id="pentestRepoPath" placeholder="C:\path\to\source">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">AI Model</label>
+                    <select class="form-input" id="pentestModel">
+                        <option value="deepseek-r1:70b" selected>deepseek-r1:70b (Recommended)</option>
+                        <option value="qwen3:32b">qwen3:32b</option>
+                        <option value="qwen3:14b">qwen3:14b (Faster)</option>
+                    </select>
+                </div>
+                <div style="border-top: 1px solid var(--border); margin: 1rem 0; padding-top: 1rem;">
+                    <h4 style="margin-bottom: 0.75rem;">Authentication (optional)</h4>
+                    <div class="form-group">
+                        <label class="form-label">Login URL</label>
+                        <input type="text" class="form-input" id="pentestLoginUrl" placeholder="/login">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-input" id="pentestUsername">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-input" id="pentestPassword">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="pentestParallel" checked> Run vulnerability agents in parallel (faster)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePentestModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="startPentest()">&#128272; Start Pentest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pentest Vulnerability Detail Modal -->
+    <div class="modal-overlay" id="pentestVulnModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="pentestVulnTitle">Vulnerability Details</h2>
+                <button class="modal-close" onclick="closePentestVulnModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="pentestVulnDetails">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePentestVulnModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State
         let state = {
@@ -1255,6 +1403,7 @@
                 threats: 'Threat Detection',
                 scan: 'File Scanner',
                 remediation: 'Remediation Center',
+                pentest: 'Penetration Testing',
                 rules: 'Detection Rules',
                 settings: 'Settings'
             };
@@ -1346,6 +1495,12 @@
                 case 'agent_status':
                     state.agent_status = msg.data;
                     updateStatus(msg.data.running);
+                    break;
+                case 'pentest_update':
+                    handlePentestUpdate(msg.data);
+                    break;
+                case 'pentest_vulnerability':
+                    handlePentestVulnerability(msg.data);
                     break;
             }
         }
@@ -2094,6 +2249,342 @@
             renderThreatsFull(); 
             renderStats(); 
             showNotification('Threat dismissed');
+        }
+
+        // =====================================================================
+        // Pentest Functions
+        // =====================================================================
+        
+        let pentestState = {
+            running: false,
+            status: 'idle',
+            target: '',
+            progress: 0,
+            vulnerabilities: [],
+            completedAgents: [],
+            currentAgent: '',
+            currentTask: ''
+        };
+
+        function showPentestModal() {
+            document.getElementById('pentestModal').classList.add('active');
+        }
+
+        function closePentestModal() {
+            document.getElementById('pentestModal').classList.remove('active');
+        }
+
+        function closePentestVulnModal() {
+            document.getElementById('pentestVulnModal').classList.remove('active');
+        }
+
+        async function startPentest() {
+            const targetUrl = document.getElementById('pentestTargetUrl').value.trim();
+            if (!targetUrl) {
+                showNotification('Please enter a target URL', 'error');
+                return;
+            }
+
+            const payload = {
+                target_url: targetUrl,
+                repo_path: document.getElementById('pentestRepoPath').value.trim() || null,
+                model: document.getElementById('pentestModel').value,
+                provider: 'ollama',
+                login_url: document.getElementById('pentestLoginUrl').value.trim() || null,
+                username: document.getElementById('pentestUsername').value.trim() || null,
+                password: document.getElementById('pentestPassword').value || null,
+                parallel: document.getElementById('pentestParallel').checked
+            };
+
+            try {
+                const response = await fetch('/api/pentest/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    closePentestModal();
+                    pentestState.running = true;
+                    pentestState.target = targetUrl;
+                    pentestState.status = 'pre_recon';
+                    updatePentestUI();
+                    showNotification('Pentest started');
+                    
+                    // Start polling for status
+                    pollPentestStatus();
+                } else {
+                    showNotification(data.detail || 'Failed to start pentest', 'error');
+                }
+            } catch (e) {
+                showNotification('Failed to start pentest: ' + e.message, 'error');
+            }
+        }
+
+        async function cancelPentest() {
+            if (!confirm('Are you sure you want to cancel the pentest?')) return;
+
+            try {
+                const response = await fetch('/api/pentest/cancel', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    pentestState.running = false;
+                    pentestState.status = 'cancelled';
+                    updatePentestUI();
+                    showNotification('Pentest cancelled');
+                }
+            } catch (e) {
+                showNotification('Failed to cancel pentest', 'error');
+            }
+        }
+
+        async function pollPentestStatus() {
+            if (!pentestState.running) return;
+
+            try {
+                const response = await fetch('/api/pentest/status');
+                const data = await response.json();
+
+                pentestState.running = data.running;
+                pentestState.status = data.status;
+                pentestState.progress = data.progress_percent || 0;
+                pentestState.currentAgent = data.current_agent || '';
+                pentestState.currentTask = data.current_task || '';
+                pentestState.completedAgents = data.completed_agents || [];
+                
+                // Get vulnerabilities
+                const vulnResponse = await fetch('/api/pentest/vulnerabilities');
+                const vulnData = await vulnResponse.json();
+                pentestState.vulnerabilities = vulnData.vulnerabilities || [];
+
+                updatePentestUI();
+
+                // Continue polling if still running
+                if (data.running) {
+                    setTimeout(pollPentestStatus, 2000);
+                } else if (data.status === 'complete') {
+                    showNotification('Pentest completed!', 'success');
+                }
+            } catch (e) {
+                console.error('Pentest status poll failed:', e);
+                setTimeout(pollPentestStatus, 5000);
+            }
+        }
+
+        function updatePentestUI() {
+            const idleState = document.getElementById('pentestIdleState');
+            const runningState = document.getElementById('pentestRunningState');
+            const statusBadge = document.getElementById('pentestStatusBadge');
+            const statusText = document.getElementById('pentestStatusText');
+            const statusDot = statusBadge.querySelector('.status-dot');
+
+            if (pentestState.running || pentestState.status !== 'idle') {
+                idleState.style.display = 'none';
+                runningState.style.display = 'block';
+                
+                // Update status
+                const statusMap = {
+                    'idle': 'Idle',
+                    'pre_recon': 'Pre-Recon',
+                    'recon': 'Reconnaissance',
+                    'vuln_analysis': 'Vuln Analysis',
+                    'exploitation': 'Exploitation',
+                    'reporting': 'Reporting',
+                    'complete': 'Complete',
+                    'failed': 'Failed',
+                    'cancelled': 'Cancelled'
+                };
+                statusText.textContent = statusMap[pentestState.status] || pentestState.status;
+                
+                // Update status dot color
+                statusDot.className = 'status-dot';
+                if (pentestState.running) {
+                    statusDot.classList.add('online');
+                } else if (pentestState.status === 'complete') {
+                    statusDot.classList.add('online');
+                } else if (pentestState.status === 'failed') {
+                    statusDot.classList.add('danger');
+                } else {
+                    statusDot.classList.add('warning');
+                }
+
+                // Update progress
+                document.getElementById('pentestTarget').textContent = pentestState.target;
+                document.getElementById('pentestProgress').textContent = pentestState.progress.toFixed(1) + '%';
+                document.getElementById('pentestProgressBar').style.width = pentestState.progress + '%';
+                document.getElementById('pentestVulnCount').textContent = pentestState.vulnerabilities.length;
+                document.getElementById('pentestCurrentAgent').textContent = pentestState.currentAgent || '-';
+                document.getElementById('pentestCurrentTask').textContent = pentestState.currentTask || '';
+
+                // Update agent badges
+                renderPentestAgents();
+                
+                // Update vulnerability list
+                renderPentestVulns();
+            } else {
+                idleState.style.display = 'block';
+                runningState.style.display = 'none';
+                statusText.textContent = 'Idle';
+                statusDot.className = 'status-dot';
+            }
+        }
+
+        function renderPentestAgents() {
+            const container = document.getElementById('pentestAgentList');
+            const allAgents = [
+                'pre-recon', 'recon',
+                'injection-vuln', 'xss-vuln', 'auth-vuln', 'authz-vuln', 'ssrf-vuln',
+                'injection-exploit', 'xss-exploit', 'auth-exploit', 'authz-exploit', 'ssrf-exploit',
+                'report'
+            ];
+
+            container.innerHTML = allAgents.map(agent => {
+                const isCompleted = pentestState.completedAgents.includes(agent);
+                const isCurrent = pentestState.currentAgent === agent;
+                
+                let className = 'device-type-badge';
+                let icon = '';
+                
+                if (isCompleted) {
+                    className += ' desktop';
+                    icon = '&#9989; ';
+                } else if (isCurrent) {
+                    className += ' server';
+                    icon = '&#9881; ';
+                }
+                
+                return `<span class="${className}">${icon}${agent}</span>`;
+            }).join('');
+        }
+
+        function renderPentestVulns() {
+            const container = document.getElementById('pentestVulnList');
+            const badge = document.getElementById('pentestVulnBadge');
+            
+            badge.textContent = pentestState.vulnerabilities.length;
+
+            if (pentestState.vulnerabilities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9989;</div>
+                        <div>No vulnerabilities found yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const severityColors = {
+                'critical': 'var(--critical)',
+                'high': 'var(--danger)',
+                'medium': 'var(--warning)',
+                'low': 'var(--success)',
+                'info': 'var(--text-muted)'
+            };
+
+            container.innerHTML = pentestState.vulnerabilities.map((vuln, i) => `
+                <div class="activity-item" style="cursor: pointer;" onclick="showPentestVulnDetail(${i})">
+                    <div class="activity-type" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: ${severityColors[vuln.severity] || 'white'}; font-weight: bold;">
+                            [${(vuln.severity || 'medium').toUpperCase()}]
+                        </span>
+                        ${escapeHtml(vuln.title || 'Unknown')}
+                        ${vuln.exploited ? '<span style="color: var(--danger);">&#9888; EXPLOITED</span>' : ''}
+                    </div>
+                    <div class="activity-details">
+                        ${escapeHtml(vuln.type || 'unknown')} | ${escapeHtml(vuln.endpoint || 'N/A')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showPentestVulnDetail(index) {
+            const vuln = pentestState.vulnerabilities[index];
+            if (!vuln) return;
+
+            document.getElementById('pentestVulnTitle').textContent = vuln.title || 'Vulnerability Details';
+            
+            const severityColors = {
+                'critical': 'var(--critical)',
+                'high': 'var(--danger)',
+                'medium': 'var(--warning)',
+                'low': 'var(--success)',
+                'info': 'var(--text-muted)'
+            };
+
+            document.getElementById('pentestVulnDetails').innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <span style="background: ${severityColors[vuln.severity] || 'gray'}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: bold;">
+                        ${(vuln.severity || 'MEDIUM').toUpperCase()}
+                    </span>
+                    <span style="background: var(--bg-tertiary); padding: 0.25rem 0.75rem; border-radius: 4px; margin-left: 0.5rem;">
+                        ${escapeHtml(vuln.type || 'unknown')}
+                    </span>
+                    ${vuln.exploited ? '<span style="background: var(--danger); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; margin-left: 0.5rem;">EXPLOITED</span>' : ''}
+                </div>
+
+                <table style="width: 100%; margin-bottom: 1rem;">
+                    <tr>
+                        <td style="padding: 0.5rem; color: var(--text-muted); width: 120px;">Endpoint</td>
+                        <td style="padding: 0.5rem;"><code>${escapeHtml(vuln.endpoint || 'N/A')}</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; color: var(--text-muted);">Parameter</td>
+                        <td style="padding: 0.5rem;"><code>${escapeHtml(vuln.parameter || 'N/A')}</code></td>
+                    </tr>
+                </table>
+
+                <h4 style="margin: 1rem 0 0.5rem;">Description</h4>
+                <p style="color: var(--text-secondary);">${escapeHtml(vuln.description || 'No description available.')}</p>
+
+                ${vuln.payload ? `
+                    <h4 style="margin: 1rem 0 0.5rem;">Payload</h4>
+                    <pre style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;"><code>${escapeHtml(vuln.payload)}</code></pre>
+                ` : ''}
+
+                ${vuln.proof ? `
+                    <h4 style="margin: 1rem 0 0.5rem;">Proof of Exploitation</h4>
+                    <pre style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;"><code>${escapeHtml(vuln.proof)}</code></pre>
+                ` : ''}
+            `;
+
+            document.getElementById('pentestVulnModal').classList.add('active');
+        }
+
+        async function viewPentestHistory() {
+            try {
+                const response = await fetch('/api/pentest/sessions');
+                const data = await response.json();
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    const list = data.sessions.map(s => 
+                        `${s.config?.target_url || 'Unknown'} - ${s.state?.status || 'unknown'} (${s.summary?.total_vulnerabilities || 0} vulns)`
+                    ).join('\n');
+                    alert('Pentest History:\n\n' + list);
+                } else {
+                    showNotification('No pentest history found');
+                }
+            } catch (e) {
+                showNotification('Failed to load history', 'error');
+            }
+        }
+
+        // Handle pentest WebSocket updates
+        function handlePentestUpdate(data) {
+            pentestState.running = data.status !== 'complete' && data.status !== 'failed' && data.status !== 'idle';
+            pentestState.status = data.status;
+            pentestState.progress = data.progress_percent || 0;
+            pentestState.currentAgent = data.current_agent || '';
+            pentestState.currentTask = data.current_task || '';
+            pentestState.completedAgents = data.completed_agents || [];
+            updatePentestUI();
+        }
+
+        function handlePentestVulnerability(vuln) {
+            pentestState.vulnerabilities.push(vuln);
+            renderPentestVulns();
         }
         
         // Helper functions

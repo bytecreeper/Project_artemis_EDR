@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-artemis"
-version = "0.5.0"
+version = "1.1.0"
 description = "Project Artemis - AI-powered detection engineering platform"
 authors = [
     {name = "ByteCreeper", email = "bytecreeper@proton.me"}
@@ -32,6 +32,7 @@ dependencies = [
     "rich>=13.0",
     "httpx>=0.25",
     "pydantic>=2.0",
+    "markdown>=3.5",
 ]
 
 [project.optional-dependencies]

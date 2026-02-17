@@ -184,6 +184,70 @@ falsepositives:
     - Software installers
 ```
 
+## Penetration Testing (Shannon-Inspired)
+
+Project Artemis includes a Shannon-inspired AI penetration testing module. It performs autonomous security assessments using your local DeepSeek model.
+
+### Quick Start
+
+```bash
+# Run a full pentest against a target
+artemis pentest run https://example.com
+
+# Whitebox testing with source code
+artemis pentest run https://app.local -r ./source-code
+
+# With authentication
+artemis pentest run https://app.local --login-url /login --username admin --password secret
+
+# Quick reconnaissance only
+artemis pentest recon https://example.com
+```
+
+### Pentest Pipeline
+
+The pentest runs in 5 phases:
+
+1. **Pre-Reconnaissance** - External scans (nmap, whatweb)
+2. **Reconnaissance** - Attack surface mapping and code analysis
+3. **Vulnerability Analysis** - 5 parallel agents:
+   - Injection (SQLi, Command Injection, SSTI, LFI)
+   - XSS (Reflected, Stored, DOM-based)
+   - Authentication (JWT, Session, Password Reset)
+   - Authorization (IDOR, Privilege Escalation)
+   - SSRF (Server-Side Request Forgery)
+4. **Exploitation** - Proof-of-concept execution
+5. **Reporting** - Professional pentest report (Markdown + HTML)
+
+### Dashboard Integration
+
+The SOC dashboard includes a Pentest tab for:
+- Starting and monitoring pentests
+- Real-time progress tracking
+- Vulnerability discovery feed
+- Professional report viewer
+
+### CLI Commands
+
+```
+artemis pentest run <url>        Start a full penetration test
+artemis pentest recon <url>      Quick reconnaissance only
+artemis pentest status           Show status of recent runs
+artemis pentest report <path>    View a pentest report
+```
+
+### Options
+
+```
+-r, --repo         Source code path for whitebox testing
+-m, --model        LLM model (default: deepseek-r1:70b)
+--login-url        Login page URL for authenticated testing
+--username         Authentication username
+--password         Authentication password
+--sequential       Run vuln agents sequentially (not parallel)
+-v, --verbose      Verbose logging
+```
+
 ## Development
 
 ```bash
@@ -232,9 +296,16 @@ project-artemis/
 - [x] Rule validation
 - [x] MITRE ATT&CK auto-mapping
 - [x] Local LLM support (Ollama)
+- [x] Web UI / SOC Dashboard
+- [x] Network discovery and monitoring
+- [x] Device fingerprinting (1000+ MAC OUIs)
+- [x] AI-powered threat detection
+- [x] Shannon-inspired penetration testing
+- [x] Multi-agent vulnerability analysis
+- [x] Professional pentest reporting
 - [ ] Rule testing against sample data
 - [ ] Rule conversion between formats
-- [ ] Web UI
+- [ ] Browser-based exploitation (Playwright)
 
 ## Author
 

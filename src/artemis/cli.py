@@ -1420,5 +1420,356 @@ def summary():
         console.print(f"  [cyan]{device.ip_address}[/cyan] {name} - {device.last_seen.strftime('%Y-%m-%d %H:%M')}")
 
 
+# ============================================================================
+# Pentest Commands - Shannon-Inspired AI Pentesting
+# ============================================================================
+
+@main.group()
+def pentest():
+    """AI-powered penetration testing (Shannon-inspired).
+    
+    Autonomous security assessment with:
+    - Reconnaissance and attack surface mapping
+    - Parallel vulnerability analysis (5 agents)
+    - Proof-of-concept exploitation
+    - Professional report generation
+    
+    Powered by local DeepSeek R1:70b model.
+    """
+    pass
+
+
+@pentest.command()
+@click.argument("target_url")
+@click.option("-r", "--repo", "repo_path", help="Path to source code for whitebox testing")
+@click.option("-m", "--model", default="deepseek-r1:70b", help="LLM model (default: deepseek-r1:70b)")
+@click.option("-p", "--provider", default="ollama", type=click.Choice(["ollama", "anthropic", "openai"]))
+@click.option("-o", "--output", "output_dir", help="Output directory for reports")
+@click.option("--login-url", help="Login page URL for authenticated testing")
+@click.option("--username", help="Username for authenticated testing")
+@click.option("--password", help="Password for authenticated testing")
+@click.option("--no-browser", is_flag=True, help="Disable browser-based exploitation")
+@click.option("--sequential", is_flag=True, help="Run vuln agents sequentially (not parallel)")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose logging")
+def run(
+    target_url: str,
+    repo_path: Optional[str],
+    model: str,
+    provider: str,
+    output_dir: Optional[str],
+    login_url: Optional[str],
+    username: Optional[str],
+    password: Optional[str],
+    no_browser: bool,
+    sequential: bool,
+    verbose: bool,
+):
+    """Run a full penetration test against a target.
+    
+    Executes the full Shannon-inspired pipeline:
+    1. Pre-Reconnaissance (nmap, whatweb)
+    2. Reconnaissance (attack surface mapping)
+    3. Vulnerability Analysis (5 parallel agents)
+    4. Exploitation (proof-of-concept)
+    5. Reporting (professional pentest report)
+    
+    Examples:
+    
+        artemis pentest run https://example.com
+        
+        artemis pentest run https://app.local -r ./source-code
+        
+        artemis pentest run https://app.local --login-url /login --username admin --password secret
+    """
+    import logging
+    from artemis.pentest import PentestPipeline, PentestConfig
+    
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    
+    # Build config
+    credentials = None
+    if username and password:
+        credentials = {"username": username, "password": password}
+    
+    config = PentestConfig(
+        target_url=target_url,
+        repo_path=repo_path,
+        provider=provider,
+        model=model,
+        output_dir=output_dir,
+        login_url=login_url,
+        credentials=credentials,
+        enable_browser=not no_browser,
+        parallel_agents=not sequential,
+    )
+    
+    console.print(Panel.fit(
+        f"[bold cyan]ARTEMIS PENTEST[/bold cyan]\n"
+        f"[dim]Shannon-Inspired AI Penetration Testing[/dim]\n\n"
+        f"[bold]Target:[/bold] {target_url}\n"
+        f"[bold]Mode:[/bold] {'Whitebox' if repo_path else 'Blackbox'}\n"
+        f"[bold]Model:[/bold] {provider}/{model}\n"
+        f"[bold]Auth:[/bold] {'Configured' if credentials else 'Anonymous'}",
+        border_style="cyan",
+    ))
+    console.print()
+    
+    # Progress callback
+    def on_progress(state):
+        phase = state.status.value.replace("_", " ").title()
+        agent = state.current_agent or "-"
+        pct = state.progress_percent
+        task = state.current_task
+        
+        console.print(
+            f"[dim]{datetime.now().strftime('%H:%M:%S')}[/dim] "
+            f"[cyan][{pct:5.1f}%][/cyan] "
+            f"[bold]{phase}[/bold] - {agent}: {task}"
+        )
+    
+    # Run pipeline
+    pipeline = PentestPipeline(config, on_progress=on_progress)
+    
+    console.print("[dim]Starting pentest pipeline...[/dim]\n")
+    
+    try:
+        result = asyncio.run(pipeline.run())
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Pentest cancelled[/yellow]")
+        pipeline.cancel()
+        return
+    
+    # Print results
+    console.print()
+    
+    if result.status.value == "complete":
+        console.print(Panel.fit(
+            f"[bold green]PENTEST COMPLETE[/bold green]\n\n"
+            f"[bold]Duration:[/bold] {(result.end_time - result.start_time).total_seconds():.1f}s\n"
+            f"[bold]Vulnerabilities:[/bold] {len(result.vulnerabilities)}\n"
+            f"[bold]Report:[/bold] {config.output_dir}/pentest_report.html",
+            border_style="green",
+        ))
+        
+        # Show vulnerability summary
+        if result.vulnerabilities:
+            console.print("\n[bold]Vulnerabilities Found:[/bold]")
+            
+            severity_colors = {
+                "critical": "red",
+                "high": "bright_red",
+                "medium": "yellow",
+                "low": "green",
+                "info": "dim",
+            }
+            
+            for vuln in result.vulnerabilities:
+                sev = vuln.get("severity", "medium").lower()
+                color = severity_colors.get(sev, "white")
+                console.print(
+                    f"  [{color}][{sev.upper()}][/{color}] "
+                    f"{vuln.get('title', 'Unknown')}"
+                )
+    else:
+        console.print(Panel.fit(
+            f"[bold red]PENTEST FAILED[/bold red]\n\n"
+            f"[bold]Error:[/bold] {result.error}",
+            border_style="red",
+        ))
+
+
+@pentest.command()
+@click.option("-d", "--dir", "output_dir", default="./audit-logs", help="Audit logs directory")
+def status(output_dir: str):
+    """Show status of recent pentest runs."""
+    from pathlib import Path
+    import json
+    
+    output_path = Path(output_dir)
+    
+    if not output_path.exists():
+        console.print("[dim]No pentest runs found. Run 'artemis pentest run' first.[/dim]")
+        return
+    
+    # Find all session.json files
+    sessions = []
+    for session_file in output_path.rglob("session.json"):
+        try:
+            data = json.loads(session_file.read_text())
+            data["_path"] = str(session_file.parent)
+            sessions.append(data)
+        except Exception:
+            pass
+    
+    if not sessions:
+        console.print("[dim]No pentest sessions found.[/dim]")
+        return
+    
+    console.print(Panel.fit(
+        "[bold cyan]PENTEST SESSIONS[/bold cyan]",
+        border_style="cyan",
+    ))
+    console.print()
+    
+    table = Table()
+    table.add_column("Target", style="cyan")
+    table.add_column("Status")
+    table.add_column("Vulns", justify="right")
+    table.add_column("Duration")
+    table.add_column("Path", style="dim")
+    
+    for session in sessions:
+        config = session.get("config", {})
+        state = session.get("state", {})
+        summary = session.get("summary", {})
+        
+        target = config.get("target_url", "?")[:40]
+        status_val = state.get("status", "unknown")
+        
+        status_style = "green" if status_val == "complete" else "red" if status_val == "failed" else "yellow"
+        
+        vulns = summary.get("total_vulnerabilities", 0)
+        vuln_str = f"[red]{vulns}[/red]" if vulns > 0 else "0"
+        
+        # Calculate duration
+        start = state.get("start_time")
+        end = state.get("end_time")
+        if start and end:
+            from datetime import datetime as dt
+            try:
+                s = dt.fromisoformat(start.replace("Z", "+00:00"))
+                e = dt.fromisoformat(end.replace("Z", "+00:00"))
+                duration = f"{(e - s).total_seconds():.0f}s"
+            except Exception:
+                duration = "-"
+        else:
+            duration = "-"
+        
+        table.add_row(
+            target,
+            f"[{status_style}]{status_val}[/{status_style}]",
+            vuln_str,
+            duration,
+            session.get("_path", "")[-30:],
+        )
+    
+    console.print(table)
+
+
+@pentest.command()
+@click.argument("report_path", type=click.Path(exists=True))
+@click.option("--html", is_flag=True, help="Open HTML report in browser")
+def report(report_path: str, html: bool):
+    """View a pentest report.
+    
+    Examples:
+    
+        artemis pentest report ./audit-logs/example.com_123/deliverables/pentest_report.md
+        
+        artemis pentest report ./audit-logs/example.com_123/deliverables --html
+    """
+    from pathlib import Path
+    import webbrowser
+    
+    path = Path(report_path)
+    
+    # If directory, look for report files
+    if path.is_dir():
+        html_report = path / "pentest_report.html"
+        md_report = path / "pentest_report.md"
+        
+        if html and html_report.exists():
+            path = html_report
+        elif md_report.exists():
+            path = md_report
+        else:
+            console.print("[red]No report found in directory[/red]")
+            return
+    
+    if html or path.suffix == ".html":
+        console.print(f"[dim]Opening {path} in browser...[/dim]")
+        webbrowser.open(f"file://{path.absolute()}")
+    else:
+        # Print markdown to console
+        content = path.read_text()
+        from rich.markdown import Markdown
+        console.print(Markdown(content))
+
+
+@pentest.command()
+@click.argument("target_url")
+@click.option("-r", "--repo", "repo_path", help="Path to source code")
+@click.option("-m", "--model", default="deepseek-r1:70b", help="LLM model")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose output")
+def recon(target_url: str, repo_path: Optional[str], model: str, verbose: bool):
+    """Run reconnaissance only (quick attack surface map).
+    
+    Useful for understanding a target before full pentest.
+    
+    Example:
+    
+        artemis pentest recon https://example.com -r ./source
+    """
+    import logging
+    from artemis.pentest import PentestConfig, ReconAgent
+    from pathlib import Path
+    
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    
+    config = PentestConfig(
+        target_url=target_url,
+        repo_path=repo_path,
+        model=model,
+    )
+    
+    console.print(Panel.fit(
+        f"[bold cyan]RECONNAISSANCE[/bold cyan]\n"
+        f"[dim]Target: {target_url}[/dim]",
+        border_style="cyan",
+    ))
+    console.print()
+    
+    async def run_recon():
+        from artemis.pentest.recon import ReconAgent
+        
+        deliverables_dir = Path(config.output_dir) / "deliverables"
+        agents_dir = Path(config.output_dir) / "agents"
+        deliverables_dir.mkdir(parents=True, exist_ok=True)
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        
+        agent = ReconAgent(
+            config=config,
+            llm=None,  # Will use direct Ollama calls
+            deliverables_dir=deliverables_dir,
+            agents_dir=agents_dir,
+        )
+        
+        with console.status("[bold blue]Mapping attack surface..."):
+            result = await agent.run()
+        
+        return result
+    
+    result = asyncio.run(run_recon())
+    
+    if result.success:
+        console.print(f"[green]Reconnaissance complete![/green]")
+        console.print(f"[dim]Report: {result.deliverable_path}[/dim]")
+        
+        # Show quick summary
+        if result.data:
+            endpoints = result.data.get("endpoints", [])
+            console.print(f"\n[bold]Endpoints found:[/bold] {len(endpoints)}")
+    else:
+        console.print(f"[red]Reconnaissance failed:[/red] {result.error}")
+
+
 if __name__ == "__main__":
     main()
