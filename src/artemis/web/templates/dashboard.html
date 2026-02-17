@@ -2150,14 +2150,9 @@
         }
         
         async function analyzeDevice() {
-            if (!state.selectedDevice) {
+            const device = state.selectedDevice;
+            if (!device || !device.ip) {
                 alert('No device selected');
-                return;
-            }
-            
-            const device = state.devices.find(d => d.ip === state.selectedDevice);
-            if (!device) {
-                alert('Device not found');
                 return;
             }
             
